@@ -20,8 +20,20 @@ fn compute_res<const PRAMASIZE: usize, const R: usize, const N: usize,
     }
 }
 
+fn create_infinit<const PRAMASIZE:usize, const R: usize, const N: usize, const MAX_COEFS_COUNT: usize>(
+    input: &G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>) -> G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT> {
+    G2Element {
+        point: EcPoint {
+            x: input.point.x.one(),
+            y: input.point.x.one(),
+            z: input.point.x.zero()
+        },
+        consts: input.consts
+    }
+}
+
 pub fn gls4_multiply_bls12<const PRAMASIZE:usize, const R: usize, const N: usize, const MAX_COEFS_COUNT: usize>
-            (input :&G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT>, scalar :&FieldElement<R>) -> G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>
+            (input: &G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT>, scalar :&FieldElement<R>) -> G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>
 {   
     // Constant-Time multiplication for elements in G2 (4-GLS): GLS Implementation of points multiplication on G2, for the BLS12 Curve
     // Joppe W. Bos, Craig Costello, and Michael Naehrig https://eprint.iacr.org/2013/458.pdf
@@ -31,10 +43,7 @@ pub fn gls4_multiply_bls12<const PRAMASIZE:usize, const R: usize, const N: usize
     let mut p1 = input.phi();
     let p2 = p1.phi();
     let mut p3 = p2.phi();
-    let infinit = G2Element{ point : EcPoint {  x:input.point.x.one(), 
-                                                                                            y :input.point.x.one(), 
-                                                                                            z: input.point.x.zero() }, 
-                                                                         consts: input.consts };                                                                                
+    let infinit = create_infinit(input);
     if input.consts.u < 0 {   p1 = p1.negate();
                               p3 = p3.negate()};                                                                             
     let mut lookup = [infinit;8];    
@@ -81,10 +90,7 @@ pub fn gls8_multiply_bls24<const PRAMASIZE:usize, const R: usize, const N: usize
     let mut p1 = input.phi();
     let p2 = p1.phi();
     let mut p3 = p2.phi();
-    let infinit = G2Element{ point : EcPoint {  x :input.point.x.one(), 
-                                                                                            y :input.point.x.one(), 
-                                                                                            z :input.point.x.zero() }, 
-                                                                         consts: input.consts };                                                                                
+    let infinit = create_infinit(input);
     if input.consts.u < 0 { p1 = p1.negate();
                             p3 = p3.negate()};                                                                             
     let mut lookup1: [G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>; 8] = [infinit;8];    
@@ -136,6 +142,10 @@ fn create_lookup<const PRAMASIZE: usize, const R: usize,
     arg
 }
 
+fn get_sign_tuple(c1: &usize, c2: &usize, c3: &usize, c4: &usize) -> (i8, i8, i8, i8) {
+    (((c1 & 1) << 1) as i8 - 1, ((c2 & 1) << 1) as i8 - 1, ((c3 & 1) << 1) as i8 - 1, ((c4 & 1) << 1) as i8 - 1)
+}
+
 pub fn gls16_multiply_bls48<const PRAMASIZE:usize, const R: usize, const N: usize, const MAX_COEFS_COUNT: usize>
             (input :&G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT>, scalar :&FieldElement<R>) -> G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT>
 {   
@@ -147,10 +157,7 @@ pub fn gls16_multiply_bls48<const PRAMASIZE:usize, const R: usize, const N: usiz
     let mut p1 = input.phi();
     let p2 = p1.phi();
     let mut p3 = p2.phi();
-    let infinit = G2Element{ point : EcPoint {  x :input.point.x.one(), 
-                                                                                            y :input.point.x.one(), 
-                                                                                            z :input.point.x.zero() }, 
-                                                                         consts: input.consts };                                                                                
+    let infinit = create_infinit(input);
     if input.consts.u < 0 { p1 = p1.negate();
                             p3 = p3.negate()};                                                                             
     let mut lookup1: [G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>; 8] = [infinit;8];    
@@ -173,8 +180,7 @@ pub fn gls16_multiply_bls48<const PRAMASIZE:usize, const R: usize, const N: usiz
     limb = (&code).bitand(ffff.clone()).to_u16().unwrap();
     let (mut c1, mut c2,mut c3,mut c4) = ((limb & 15) as usize , ((limb >> 4) & 15) as usize,
                                                                       ((limb >> 8) & 15) as usize,((limb >> 12) & 15) as usize);
-    let (mut sign1 , mut sign2, mut sign3, mut sign4) = (((c1 & 1) << 1) as i8 - 1, ((c2 & 1) << 1) as i8 - 1,
-                                                                          ((c3 & 1) << 1) as i8 - 1,((c4 & 1) << 1) as i8 - 1 );
+    let (mut sign1 , mut sign2, mut sign3, mut sign4) = get_sign_tuple(&c1, &c2, &c3, &c4);
     let mut result1 = compute_res(sign1, &lookup1, c1 >> 1).
         addto(&compute_res(sign2, &lookup2, c2 >> 1));
     let mut result2 = compute_res(sign3, &lookup3, c3 >> 1).
@@ -185,7 +191,7 @@ pub fn gls16_multiply_bls48<const PRAMASIZE:usize, const R: usize, const N: usiz
         result = result.double();
         limb = (&code).bitand(ffff.clone()).to_u16().unwrap();
         (c1,c2,c3,c4) = ((limb & 15) as usize , ((limb >> 4) & 15) as usize,((limb >> 8) & 15) as usize,((limb >> 12) & 15) as usize);
-        (sign1,sign2,sign3,sign4) = (((c1 & 1) << 1) as i8 - 1, ((c2 & 1) << 1) as i8 - 1,((c3 & 1) << 1) as i8 - 1,((c4 & 1) << 1) as i8 - 1 );
+        (sign1,sign2,sign3,sign4) = get_sign_tuple(&c1, &c2, &c3, &c4);
         result1 = compute_res(sign1, &lookup1, c1 >> 1).addto(&compute_res(sign2, &lookup2, c2 >> 1));
         result2 = compute_res(sign3, &lookup3, c3 >> 1).addto(&compute_res(sign4, &lookup4, c4 >> 1));
         result = result.addto(&result1.addto(&result2));
