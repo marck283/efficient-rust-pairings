@@ -565,6 +565,48 @@ pub fn pow <const N: usize> (a : &[u64; N], e :&[u64], useladder:bool,_params :&
             }
     }
 
+fn tonelli_shanks<const N: usize>(a:&[u64; N],_params :&super::prime_fields::FieldParams<N>) -> Option<[u64; N]> {
+    // Tonelli-Shanks Algorithm (p mod 4 ==1)
+    //  Adapted from  section 6 of 'Square roots from 1; 24, 51, 10 to Dan Shanks'  by Ezra Brown:
+    // https://www.maa.org/sites/default/files/pdf/upload_library/22/Polya/07468342.di020786.02p0470a.pdf
+    let w = pow(a,&_params.tonelli_params[1],false,_params);
+    let mut y = mul(&a,&w,_params);
+    let mut b = mul(&y,&w,_params);
+    let mut g = mul(&_params.tonelli_params[0],&_params.rsquare,_params); // Convert to Montgomery repr
+    let mut r = _params.sqrtid;
+    let mut t = b.clone();
+    for _ in 0..r-1 {
+        t = sqr(&t, _params)
+    };
+    if equal(&t, &[0;N]) {
+        return Some([0;N])
+    }
+    if !equal(&t, &_params.one) {
+        return None
+    }
+    loop  {
+        let mut t= b.clone();
+        let mut m= 0;
+        while !equal(&t, &_params.one) {
+            t = sqr(&t, _params);
+            m = m + 1;
+        }
+        if m==0 {
+            return Some(y)
+        }
+        let mut ge = r - m - 1;
+        t = g.clone();
+        while ge > 0 {
+            t = sqr(&t,_params);
+            ge = ge - 1
+        }
+        g = sqr(&t,_params);
+        y = mul(&y, &t, _params);
+        b = mul(&b, &g, _params);
+        r = m;
+    }
+}
+
 pub fn sqrt<const N: usize> (a:&[u64; N],_params :&super::prime_fields::FieldParams<N>) -> Option<[u64; N]> {
     if _params.sqrtid == -1 { // p mod 4 ==3
         let result = pow(a,&_params.modplus1div4,false,_params);
@@ -574,45 +616,7 @@ pub fn sqrt<const N: usize> (a:&[u64; N],_params :&super::prime_fields::FieldPar
             None
         }
     } else {
-        // Tonelli-Shanks Algorithm (p mod 4 ==1)
-        //  Adapted from  section 6 of 'Square roots from 1; 24, 51, 10 to Dan Shanks'  by Ezra Brown:
-        // https://www.maa.org/sites/default/files/pdf/upload_library/22/Polya/07468342.di020786.02p0470a.pdf
-        let w = pow(a,&_params.tonelli_params[1],false,_params);
-        let mut y = mul(&a,&w,_params);
-        let mut b = mul(&y,&w,_params);
-        let mut g = mul(&_params.tonelli_params[0],&_params.rsquare,_params); // Convert to Montgomery repr
-        let mut r = _params.sqrtid;
-        let mut t = b.clone();
-        for _ in 0..r-1 {
-            t = sqr(&t, _params)
-        };
-        if equal(&t, &[0;N]) {
-            return Some([0;N])
-        }
-        if !equal(&t, &_params.one) {
-            return None
-        }
-        loop  {
-            let mut t= b.clone();
-            let mut m= 0;
-            while !equal(&t, &_params.one) {
-                t = sqr(&t, _params);
-                m = m + 1;
-            }
-            if m==0 {
-                return Some(y)
-            }
-            let mut ge = r - m - 1;
-            t = g.clone();
-            while ge > 0 {
-                t = sqr(&t,_params);
-                ge = ge - 1
-            }
-            g = sqr(&t,_params);
-            y = mul(&y, &t, _params);
-            b = mul(&b, &g, _params);
-            r = m;
-        }
+        tonelli_shanks(a, _params)
     }
 }
 
