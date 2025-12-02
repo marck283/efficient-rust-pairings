@@ -125,6 +125,17 @@ pub fn gls8_multiply_bls24<const PRAMASIZE:usize, const R: usize, const N: usize
     if out_sig == 1 {result} else {result.negate()}
 }
 
+fn create_lookup<const PRAMASIZE: usize, const R: usize,
+    const N: usize, const MAX_COEFS_COUNT: usize>(infinit: G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>,
+                                                  lookup1: [G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>; 8]) ->
+                                                  [G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>; 8] {
+    let mut arg = [infinit; 8];
+    arg.iter_mut()
+        .zip(lookup1.iter().map(|x| phi_bls48(x,4)))
+        .for_each(|(dest, src)| *dest = src);
+    arg
+}
+
 pub fn gls16_multiply_bls48<const PRAMASIZE:usize, const R: usize, const N: usize, const MAX_COEFS_COUNT: usize>
             (input :&G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT>, scalar :&FieldElement<R>) -> G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT>
 {   
@@ -150,28 +161,12 @@ pub fn gls16_multiply_bls48<const PRAMASIZE:usize, const R: usize, const N: usiz
     lookup1[4] = p3.addto(&lookup1[0]);
     lookup1[5] = p3.addto(&lookup1[1]);
     lookup1[6] = p3.addto(&lookup1[2]);
-    lookup1[7] = p3.addto(&lookup1[3]);    
-    let lookup2  = {
-        let mut arg = [infinit; 8];
-        arg.iter_mut()
-            .zip(lookup1.iter().map(|x| phi_bls48(x,4)))
-            .for_each(|(dest, src)| *dest = src);
-        arg
-    };    
-    let lookup3  = {
-        let mut arg = [infinit; 8];
-        arg.iter_mut()
-            .zip(lookup2.iter().map(|x| phi_bls48(x,4)))
-            .for_each(|(dest, src)| *dest = src);
-        arg
-    };    
-    let lookup4  = {
-        let mut arg = [infinit; 8];
-        arg.iter_mut()
-            .zip(lookup3.iter().map(|x| phi_bls48(x,4)))
-            .for_each(|(dest, src)| *dest = src);
-        arg
-    };        
+    lookup1[7] = p3.addto(&lookup1[3]);
+
+    let lookup2 = create_lookup(infinit, lookup1);
+    let lookup3 = create_lookup(infinit, lookup2);
+    let lookup4 = create_lookup(infinit, lookup3);
+
     let mut limb : u16 = (&code).bitand(ffff.clone()).to_u16().unwrap();
     let out_sig : i8 =  1 - ((limb & 1) << 1) as i8;    
     code = code >> 1;
