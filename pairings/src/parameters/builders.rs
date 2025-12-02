@@ -62,12 +62,12 @@ pub fn build_field_params<'a ,const NUMLIMBS:usize>(inputfield : &str) -> FieldP
                 let in2= (mod_inverse(&(BigInt::one()+BigInt::one()),&bigint_modulo).unwrap()* &r) % &bigint_modulo;
                 let qp = mod_inverse(&(&(BigInt::one() << num_bits)-&bigint_modulo),&(BigInt::one() << num_bits)).unwrap();
                 let th = (&bigint_modulo - BigUint::one().to_bigint().unwrap()) >> 1;
-                for i in 0..NUMLIMBS {   mod_on_limbs[i] = (((&bigint_modulo & (&mask << (i * 64))) >> (i * 64)) as BigInt).to_u64().unwrap();
-                                                one[i] = (((&r & (&mask << (i * 64))) >> (i * 64)) as BigInt).to_u64().unwrap();
-                                                rsquare[i] = (((&r2 & (&mask << (i * 64))) >> (i * 64)) as BigInt).to_u64().unwrap();
-                                                modplus1div4[i] = (((&mp1d4 & (&mask << (i * 64))) >> (i * 64)) as BigInt).to_u64().unwrap();
-                                                inv2[i] = (((&in2 & (&mask << (i * 64))) >> (i * 64)) as BigInt).to_u64().unwrap();
-                                                threshold[i] = (((&th & (&mask << (i * 64))) >> (i * 64)) as BigInt).to_u64().unwrap();
+                for i in 0..NUMLIMBS {   mod_on_limbs[i] = BigInt::to_u64(&((&bigint_modulo & (&mask << (i * 64))) >> (i * 64))).unwrap();
+                                                one[i] = BigInt::to_u64(&((&r & (&mask << (i * 64))) >> (i * 64))).unwrap();
+                                                rsquare[i] = BigInt::to_u64(&((&r2 & (&mask << (i * 64))) >> (i * 64))).unwrap();
+                                                modplus1div4[i] = BigInt::to_u64(&((&mp1d4 & (&mask << (i * 64))) >> (i * 64))).unwrap();
+                                                inv2[i] = BigInt::to_u64(&((&in2 & (&mask << (i * 64))) >> (i * 64))).unwrap();
+                                                threshold[i] = BigInt::to_u64(&((&th & (&mask << (i * 64))) >> (i * 64))).unwrap();
                                                 };          
                 let qprime = (&qp  & &mask).to_u128().unwrap();
                 let mut sqrtid: i16 = if (&bigint_modulo % 4u8).to_u8().unwrap() == 3 {-1} else {1};
@@ -80,8 +80,8 @@ pub fn build_field_params<'a ,const NUMLIMBS:usize>(inputfield : &str) -> FieldP
                                 while n.modpow(&big_m1_div2, &big_modulo_uint) != &big_modulo_uint-BigUint::one() {n = n + BigUint::one()};
                                 let g = n.modpow(&s, &big_modulo_uint);
                                 for i in 0..NUMLIMBS 
-                                    {tonelli_s[i] = (((&((&s-BigUint::one())>>1) & (&(mask.to_biguint().unwrap()) << (i * 64))) >> (i * 64)) ).to_u64().unwrap();
-                                     tonelli_g[i] = (((&g & (&(mask.to_biguint().unwrap()) << (i * 64))) >> (i * 64)) ).to_u64().unwrap();
+                                    {tonelli_s[i] = BigUint::to_u64(&((&((&s-BigUint::one())>>1) & (&(mask.to_biguint().unwrap()) << (i * 64))) >> (i * 64)) ).unwrap();
+                                     tonelli_g[i] = ((&g & (&(mask.to_biguint().unwrap()) << (i * 64))) >> (i * 64)).to_u64().unwrap();
                                      }
                                 }
                 let optimize_sqr = mod_on_limbs[NUMLIMBS-1]< ((1<<62)-1);

@@ -506,7 +506,7 @@ pub fn invert <const N: usize> (a : &[u64; N],_params :&super::prime_fields::Fie
                 *carry =0;
                 if b[0] & 1 == 1 {
                     add_p(b,&_params.modulo,carry)
-                };
+                }
                 r_shift(b,*carry)
             }
         }
