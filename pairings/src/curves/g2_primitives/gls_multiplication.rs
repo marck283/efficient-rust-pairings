@@ -11,8 +11,17 @@ use std::{ops::BitAnd, str::FromStr};
 
 use super::phi::phi_bls24;
 
+fn compute_res<const PRAMASIZE: usize, const R: usize, const N: usize,
+    const MAX_COEFS_COUNT: usize>(sign: i8, lookup: &[G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>; 8],
+                                  idx: usize) -> G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT> {
+    match sign {
+        1 => lookup[idx],
+        _ => lookup[idx].negate()
+    }
+}
+
 pub fn gls4_multiply_bls12<const PRAMASIZE:usize, const R: usize, const N: usize, const MAX_COEFS_COUNT: usize>
-            (input :&G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT>, scalar :&FieldElement<R>) -> G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT>
+            (input :&G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT>, scalar :&FieldElement<R>) -> G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>
 {   
     // Constant-Time multiplication for elements in G2 (4-GLS): GLS Implementation of points multiplication on G2, for the BLS12 Curve
     // Joppe W. Bos, Craig Costello, and Michael Naehrig https://eprint.iacr.org/2013/458.pdf
@@ -37,22 +46,27 @@ pub fn gls4_multiply_bls12<const PRAMASIZE:usize, const R: usize, const N: usize
     lookup[5] = p3.addto(&lookup[1]);
     lookup[6] = p3.addto(&lookup[2]);
     lookup[7] = p3.addto(&lookup[3]);   
-    let mut limb : u8 = (&code).bitand((ff).clone()).to_u8().unwrap();
+    let mut limb : u8 = (&code).bitand(ff.clone()).to_u8().unwrap();
     let out_sig : i8 =  1 - ((limb & 1) << 1) as i8;
     code = code >> 1;
-    limb = (&code).bitand((ff).clone()).to_u8().unwrap();
-    let mut sign : i8 = ((limb & 1) << 1) as i8 - 1 ;
-    let mut idx =  ((limb & 15) >> 1) as usize;
-    let mut result = if sign == 1 {lookup[idx]} else {lookup[idx].negate()};    
+    limb = (&code).bitand(ff.clone()).to_u8().unwrap();
+    let mut sign : i8 = ((limb & 1) << 1) as i8 - 1;
+    let mut idx = ((limb & 15) >> 1) as usize;
+    let mut result = compute_res(sign, &lookup, idx);
     code = code >> 4;
-    while code != BigUint::one() {  result = result.double();
-                                    limb = (&code).bitand((ff).clone()).to_u8().unwrap();
-                                    sign = ((limb & 1) << 1) as i8- 1 ;
-                                    idx =  ((limb & 15) >> 1) as usize;
-                                    result = result.addto(& if sign == 1 {lookup[idx]} else {lookup[idx].negate()}); 
-                                    code = code >> 4;
-                                    }
-    if out_sig == 1 {result} else {result.negate()}
+    while code != BigUint::one() {
+        result = result.double();
+        limb = (&code).bitand(ff.clone()).to_u8().unwrap();
+        sign = ((limb & 1) << 1) as i8 - 1;
+        idx =  ((limb & 15) >> 1) as usize;
+        result = result.addto(& compute_res(sign, &lookup, idx));
+        code = code >> 4;
+    }
+    if out_sig == 1 {
+        result
+    } else {
+        result.negate()
+    }
 }
 
 pub fn gls8_multiply_bls24<const PRAMASIZE:usize, const R: usize, const N: usize, const MAX_COEFS_COUNT: usize>
@@ -89,23 +103,25 @@ pub fn gls8_multiply_bls24<const PRAMASIZE:usize, const R: usize, const N: usize
             .for_each(|(dest, src)| *dest = src);
         arg
     };    
-    let mut limb : u8 = (&code).bitand((ff).clone()).to_u8().unwrap();
+    let mut limb : u8 = (&code).bitand(ff.clone()).to_u8().unwrap();
     let out_sig : i8 =  1 - ((limb & 1) << 1) as i8;    
     code = code >> 1;
-    limb = (&code).bitand((ff).clone()).to_u8().unwrap();    
+    limb = (&code).bitand(ff.clone()).to_u8().unwrap();
     let (mut c1, mut c2) = ((limb & 15) as usize , ((limb >> 4) & 15) as usize);
-    let (mut sign1 , mut sign2)    = (((c1 & 1) << 1) as i8 - 1, ((c2 & 1) << 1) as i8 - 1);
-    let mut result = (if sign1 == 1 {lookup1[c1 >> 1]} else {lookup1[c1 >> 1].negate()})
-                                                                 .addto(&if sign2 == 1 {lookup2[c2 >> 1]} else {lookup2[c2 >> 1].negate()});    
+    let (mut sign1 , mut sign2) = (((c1 & 1) << 1) as i8 - 1, ((c2 & 1) << 1) as i8 - 1);
+    let mut result = compute_res(sign1, &lookup1, c1 >> 1).
+        addto(&compute_res(sign2, &lookup2, c2 >> 1));
     code = code >> 8;
-    while code != BigUint::one() {  result = result.double();
-                                    limb = (&code).bitand((ff).clone()).to_u8().unwrap();
-                                    (c1, c2) =  ((limb & 15) as usize , ((limb >> 4) & 15) as usize);
-                                    (sign1, sign2) =  (((c1 & 1) << 1) as i8 - 1, ((c2 & 1) << 1) as i8 - 1);
-                                    result = result.addto(&if sign1 == 1 {lookup1[c1 >> 1]} else {lookup1[c1 >> 1].negate()})
-                                                           .addto(&if sign2 == 1 {lookup2[c2 >> 1]} else {lookup2[c2 >> 1].negate()}); 
-                                    code = code >> 8;
-                                    }
+    while code != BigUint::one() {
+        result = result.double();
+        limb = (&code).bitand(ff.clone()).to_u8().unwrap();
+        (c1, c2) = ((limb & 15) as usize , ((limb >> 4) & 15) as usize);
+        (sign1, sign2) = (((c1 & 1) << 1) as i8 - 1, ((c2 & 1) << 1) as i8 - 1);
+        result = result.
+            addto(&compute_res(sign1, &lookup1, c1 >> 1)).
+            addto(&compute_res(sign2, &lookup2, c2 >> 1));
+        code = code >> 8;
+    }
     if out_sig == 1 {result} else {result.negate()}
 }
 
@@ -156,30 +172,29 @@ pub fn gls16_multiply_bls48<const PRAMASIZE:usize, const R: usize, const N: usiz
             .for_each(|(dest, src)| *dest = src);
         arg
     };        
-    let mut limb : u16 = (&code).bitand((ffff).clone()).to_u16().unwrap();
+    let mut limb : u16 = (&code).bitand(ffff.clone()).to_u16().unwrap();
     let out_sig : i8 =  1 - ((limb & 1) << 1) as i8;    
     code = code >> 1;
-    limb = (&code).bitand((ffff).clone()).to_u16().unwrap();    
+    limb = (&code).bitand(ffff.clone()).to_u16().unwrap();
     let (mut c1, mut c2,mut c3,mut c4) = ((limb & 15) as usize , ((limb >> 4) & 15) as usize,
                                                                       ((limb >> 8) & 15) as usize,((limb >> 12) & 15) as usize);
-    let (mut sign1 , mut sign2, mut sign3, mut sign4)  = (((c1 & 1) << 1) as i8 - 1, ((c2 & 1) << 1) as i8 - 1,
+    let (mut sign1 , mut sign2, mut sign3, mut sign4) = (((c1 & 1) << 1) as i8 - 1, ((c2 & 1) << 1) as i8 - 1,
                                                                           ((c3 & 1) << 1) as i8 - 1,((c4 & 1) << 1) as i8 - 1 );
-    let mut result1 = (if sign1 == 1 {lookup1[c1 >> 1]} else {lookup1[c1 >> 1].negate()})
-                                                                  .addto(&if sign2 == 1 {lookup2[c2 >> 1]} else {lookup2[c2 >> 1].negate()});    
-    let mut result2 = (if sign3 == 1 {lookup3[c3 >> 1]} else {lookup3[c3 >> 1].negate()})
-                                                                  .addto(&if sign4 == 1 {lookup4[c4 >> 1]} else {lookup4[c4 >> 1].negate()});    
+    let mut result1 = compute_res(sign1, &lookup1, c1 >> 1).
+        addto(&compute_res(sign2, &lookup2, c2 >> 1));
+    let mut result2 = compute_res(sign3, &lookup3, c3 >> 1).
+        addto(&compute_res(sign4, &lookup4, c4 >> 1));
     let mut result = result1.addto(&result2);
     code = code >> 16;
-    while code != BigUint::one() {  result = result.double();
-                                    limb = (&code).bitand((ffff).clone()).to_u16().unwrap();
-                                    (c1,c2,c3,c4) = ((limb & 15) as usize , ((limb >> 4) & 15) as usize,((limb >> 8) & 15) as usize,((limb >> 12) & 15) as usize);
-                                    (sign1,sign2,sign3,sign4) = (((c1 & 1) << 1) as i8 - 1, ((c2 & 1) << 1) as i8 - 1,((c3 & 1) << 1) as i8 - 1,((c4 & 1) << 1) as i8 - 1 );
-                                    result1 = (if sign1 == 1 {lookup1[c1 >> 1]} else {lookup1[c1 >> 1].negate()})
-                                               .addto(&if sign2 == 1 {lookup2[c2 >> 1]} else {lookup2[c2 >> 1].negate()});    
-                                    result2 = (if sign3 == 1 {lookup3[c3 >> 1]} else {lookup3[c3 >> 1].negate()})
-                                               .addto(&if sign4 == 1 {lookup4[c4 >> 1]} else {lookup4[c4 >> 1].negate()});    
-                                    result = result.addto(&result1.addto(&result2)); 
-                                    code = code >> 16;
-                                    }
+    while code != BigUint::one() {
+        result = result.double();
+        limb = (&code).bitand(ffff.clone()).to_u16().unwrap();
+        (c1,c2,c3,c4) = ((limb & 15) as usize , ((limb >> 4) & 15) as usize,((limb >> 8) & 15) as usize,((limb >> 12) & 15) as usize);
+        (sign1,sign2,sign3,sign4) = (((c1 & 1) << 1) as i8 - 1, ((c2 & 1) << 1) as i8 - 1,((c3 & 1) << 1) as i8 - 1,((c4 & 1) << 1) as i8 - 1 );
+        result1 = compute_res(sign1, &lookup1, c1 >> 1).addto(&compute_res(sign2, &lookup2, c2 >> 1));
+        result2 = compute_res(sign3, &lookup3, c3 >> 1).addto(&compute_res(sign4, &lookup4, c4 >> 1));
+        result = result.addto(&result1.addto(&result2));
+        code = code >> 16;
+    }
     if out_sig == 1 {result} else {result.negate()}
 }
