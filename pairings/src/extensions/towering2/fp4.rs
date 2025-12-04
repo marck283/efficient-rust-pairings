@@ -2,7 +2,7 @@
 // EEDIS-Laboratory. UDL-University. Algeria
 // During May 2024.
 
-use std::{fmt, usize};
+use std::{fmt};
 use super::super::super::fields::prime_fields::{FieldElement, PrimeField};
 use crate::tools::arithmetic_interface::ArithmeticOperations;
 use super::super::super::extensions::ext_fields::{ExtElement, ExtField,ExFieldConsts};

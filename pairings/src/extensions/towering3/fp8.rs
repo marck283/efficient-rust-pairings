@@ -2,7 +2,7 @@
 // EEDIS-Laboratory. UDL-University. Algeria
 // During May 2024.
 
-use std::{fmt, usize};
+use std::{fmt};
 use super::super::super::fields::prime_fields::{FieldElement, PrimeField};
 use super::super::ext_fields::{ExtElement, ExtField,ExFieldConsts};
 use super::super::towering1::fp2::Fp2Element;

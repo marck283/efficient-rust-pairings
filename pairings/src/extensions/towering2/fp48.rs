@@ -2,7 +2,7 @@
 // EEDIS-Laboratory. UDL-University. Algeria
 // During May 2024.
 
-use std::{fmt, usize};
+use std::{fmt};
 use crate::tools::exponent::Exponent;
 
 use super::super::super::fields::prime_fields::{FieldElement, PrimeField};
