@@ -109,7 +109,7 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                         let r = BigUint::from_str_radix(&scalar.fieldparams.modulo_as_strhex[2..], 16).unwrap(); 
                         let a = (&r - &s) * (BigUint::one() - &alpha) + &s * &alpha;
                         let mut code = recod_scalar_glv2(&a, &self.consts.lambda_big);                
-                        let mut limb = (&code).bitand((ff).clone()).to_u8().unwrap();
+                        let mut limb = (&code).bitand(ff.clone()).to_u8().unwrap();
                         let mut fi   = limb & 1;
                         let mut sig : i8  = (limb & 2) as i8 - 1;
                         let mut idx = ((limb & WDMASK) >> 2) as usize;
@@ -117,7 +117,7 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                                                                             else { G1Element {point :lookup[idx], consts : self.consts}.phi().negate()};
                         if sig == -1 {result.point =  result.point.negate()};                                                
                         code = code >> WDSIZE;
-                        while code != BigUint::one() {  limb = (&code).bitand((ff).clone()).to_u8().unwrap();
+                        while code != BigUint::one() {  limb = (&code).bitand(ff.clone()).to_u8().unwrap();
                                                         fi   = limb & 1; 
                                                         sig  = (limb & 2) as i8 - 1;
                                                         idx  = ((limb & WDMASK) >> 2) as usize;

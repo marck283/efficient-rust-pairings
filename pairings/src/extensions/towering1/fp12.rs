@@ -33,25 +33,39 @@ pub mod fp6 {
     
         fn field_interface(&self)->PrimeField<N> 
             { self.base_field.clone() }
-    
-        fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>)->  Fp6Field<PARAMSIZE,N>
-            { Fp6Field {base_field : (*base_field).clone(), constants: consts}}   
-        
+
         fn extconsts_interface(&self) ->Option<&'static ExFieldConsts<PARAMSIZE,N>> {
             self.constants
         }
+
+        fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>)->  Fp6Field<PARAMSIZE,N>
+            { Fp6Field {base_field : (*base_field).clone(), constants: consts}}
         }       
     
     impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,6,N> for Fp6Element<PARAMSIZE,N>{
-        fn new(content :&[FieldElement<N>; 6], consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp6Element<PARAMSIZE,N>
-            {   Fp6Element{content :content.clone(), constants :consts}    }
-    
         fn content_interface(&self) -> &[FieldElement<N>;6]
             {   &self.content   }
-        
+
         fn constants_interface(&self) -> Option<&'static ExFieldConsts<PARAMSIZE,N>> {
             self.constants
-        }    
+        }
+
+        fn multiply(&self, rhs : &Self) -> Self {
+            let a0 = Fp2Element{content :[self.content[0],self.content[1]]};
+            let b0 = Fp2Element{content :[self.content[2],self.content[3]]};
+            let c0 = Fp2Element{content :[self.content[4],self.content[5]]};
+            let a1 = Fp2Element{content :[rhs.content[0],rhs.content[1]]};
+            let b1 = Fp2Element{content :[rhs.content[2],rhs.content[3]]};
+            let c1 = Fp2Element{content :[rhs.content[4],rhs.content[5]]};
+            let t0 = a0.multiply(&a1);
+            let t1 = b0.multiply(&b1);
+            let t2 = c0.multiply(&c1);
+            let x0 = b0.addto(&c0).multiply(&b1.addto(&c1)).substract(&t1).substract(&t2).mul_by_u_p_1().addto(&t0);
+            let x1 = a0.addto(&b0).multiply(&a1.addto(&b1)).substract(&t0).substract(&t1).addto(&t2.mul_by_u_p_1());
+            let x2 = a0.addto(&c0).multiply(&a1.addto(&c1)).substract(&t0).substract(&t2).addto(&t1);
+            Self {content :[x0.content[0], x0.content[1], x1.content[0], x1.content[1], x2.content[0], x2.content[1]],
+                constants : self.constants  }
+            }
     
         fn sqr(&self) -> Self {
             let a = Fp2Element{content :[self.content[0],self.content[1]]};
@@ -66,24 +80,10 @@ pub mod fp6 {
             Self {content :[x0.content[0], x0.content[1], x1.content[0], x1.content[1], x2.content[0], x2.content[1]], 
                   constants : self.constants  }                                 
         }
-        
-    
-        fn multiply(&self, rhs : &Self) -> Self {  
-            let a0 = Fp2Element{content :[self.content[0],self.content[1]]};
-            let b0 = Fp2Element{content :[self.content[2],self.content[3]]};
-            let c0 = Fp2Element{content :[self.content[4],self.content[5]]};   
-            let a1 = Fp2Element{content :[rhs.content[0],rhs.content[1]]};
-            let b1 = Fp2Element{content :[rhs.content[2],rhs.content[3]]};
-            let c1 = Fp2Element{content :[rhs.content[4],rhs.content[5]]};   
-            let t0 = a0.multiply(&a1);
-            let t1 = b0.multiply(&b1);
-            let t2 = c0.multiply(&c1);
-            let x0 = b0.addto(&c0).multiply(&b1.addto(&c1)).substract(&t1).substract(&t2).mul_by_u_p_1().addto(&t0);
-            let x1 = a0.addto(&b0).multiply(&a1.addto(&b1)).substract(&t0).substract(&t1).addto(&t2.mul_by_u_p_1());
-            let x2 = a0.addto(&c0).multiply(&a1.addto(&c1)).substract(&t0).substract(&t2).addto(&t1);
-            Self {content :[x0.content[0], x0.content[1], x1.content[0], x1.content[1], x2.content[0], x2.content[1]], 
-                constants : self.constants  }                                                                                                    
-            }
+
+
+        fn new(content :&[FieldElement<N>; 6], consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp6Element<PARAMSIZE,N>
+            {   Fp6Element{content :content.clone(), constants :consts}    }
 
      }
     
@@ -136,10 +136,10 @@ pub mod fp6 {
                                                               tmp.substract(&self.content[5].multiply(&rhs[2][1]).double())];
                              let t0 = self.content[0].multiply(&rhs[2][0]);
                              let t1 = self.content[1].multiply(&rhs[2][1]);
-                             let res1 =[t0.substract(&t1), (self.content[0].addto(&self.content[1])).multiply(&y2py3).substract(&t0).substract(&t1)];
+                             let res1 =[t0.substract(&t1), self.content[0].addto(&self.content[1]).multiply(&y2py3).substract(&t0).substract(&t1)];
                              let t0 = self.content[2].multiply(&rhs[2][0]);
                              let t1 = self.content[3].multiply(&rhs[2][1]);
-                             let res2 =[t0.substract(&t1), (self.content[2].addto(&self.content[3])).multiply(&y2py3).substract(&t0).substract(&t1)];
+                             let res2 =[t0.substract(&t1), self.content[2].addto(&self.content[3]).multiply(&y2py3).substract(&t0).substract(&t1)];
                              Self {  content :[res0[0], res0[1], res1[0], res1[1], res2[0], res2[1]], 
                                 constants : self.constants  }  
                         }
@@ -182,23 +182,35 @@ impl<const PARAMSIZE:usize,const N: usize> ExtField<PARAMSIZE,12,N> for Fp12Fiel
     fn field_interface(&self)->PrimeField<N> 
         { self.base_field.clone() }
 
-    fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>)->  Fp12Field<PARAMSIZE,N>
-        { Fp12Field {base_field : (*base_field).clone(), constants: consts.unwrap()}}   
-    
     fn extconsts_interface(&self) ->Option<&'static ExFieldConsts<PARAMSIZE,N>> {
         Some(self.constants)
     }
+
+    fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>)->  Fp12Field<PARAMSIZE,N>
+        { Fp12Field {base_field : (*base_field).clone(), constants: consts.unwrap()}}
     }
 
 impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,12,N> for Fp12Element<PARAMSIZE,N>{
-    fn new(content :&[FieldElement<N>; 12], consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp12Element<PARAMSIZE,N>
-        {   Fp12Element{content :content.clone(), constants :consts.unwrap()}    }
-
-    fn content_interface(&self) -> &[super::super::super::fields::prime_fields::FieldElement<N>;12]
+    fn content_interface(&self) -> &[FieldElement<N>;12]
         {   &self.content   }
-    
+
     fn constants_interface(&self) -> Option<&'static ExFieldConsts<PARAMSIZE,N>> {
         Some(self.constants)
+    }
+
+    fn multiply(&self, rhs:&Self) -> Self {
+        let a0 = get_slice_fp6(&self, 0);
+        let b0 = get_slice_fp6(&self, 1);
+        let a1 = get_slice_fp6(&rhs, 0);
+        let b1 = get_slice_fp6(&rhs, 1);
+        let t0 = a0.multiply(&a1);
+        let t1 = b0.multiply(&b1);
+        let t3 = a0.addto(&b0).multiply(&a1.addto(&b1));
+        let x0 = t1.mul_by_u().addto(&t0);
+        let x1 = t3.substract(&t0).substract(&t1);
+        Self {  content : [x0.content[0], x0.content[1],x0.content[2],x0.content[3],x0.content[4],x0.content[5],
+                           x1.content[0], x1.content[1],x1.content[2],x1.content[3],x1.content[4],x1.content[5]],
+                constants : self.constants}
     }
     
     fn sqr(&self) -> Self {
@@ -214,20 +226,8 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,12,N> for Fp12El
                 constants : self.constants}                                                                                                                                                    
     }
 
-    fn multiply(&self, rhs:&Self) -> Self {          
-        let a0 = get_slice_fp6(&self, 0);
-        let b0 = get_slice_fp6(&self, 1);
-        let a1 = get_slice_fp6(&rhs, 0);
-        let b1 = get_slice_fp6(&rhs, 1);
-        let t0 = a0.multiply(&a1);
-        let t1 = b0.multiply(&b1);
-        let t3 = a0.addto(&b0).multiply(&a1.addto(&b1));
-        let x0 = t1.mul_by_u().addto(&t0);
-        let x1 = t3.substract(&t0).substract(&t1);
-        Self {  content : [x0.content[0], x0.content[1],x0.content[2],x0.content[3],x0.content[4],x0.content[5],
-                           x1.content[0], x1.content[1],x1.content[2],x1.content[3],x1.content[4],x1.content[5]],
-                constants : self.constants}  
-    }
+    fn new(content :&[FieldElement<N>; 12], consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp12Element<PARAMSIZE,N>
+        {   Fp12Element{content :content.clone(), constants :consts.unwrap()}    }
 }
 
 impl <const PARAMSIZE:usize,const N:usize> Fp12Element <PARAMSIZE,N>{

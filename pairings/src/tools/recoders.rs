@@ -23,10 +23,10 @@ pub fn recod_one_scalar(scalar :&BigUint) -> BigUint
         mu = mu + (WSIZE as u64) - (mu % (WSIZE as u64));
         x = x.bitor(BigUint::one() << mu);        
         let mut code = BigUint::one();        
-        while x != BigUint::one(){  let mut limb = (&x).bitand((ff).clone()).to_u8().unwrap_or(0);
+        while x != BigUint::one(){  let mut limb = (&x).bitand(ff.clone()).to_u8().unwrap_or(0);
                                     let sign = ((limb >> (WSIZE - 1)) & 2) as i8 - 1 ;                
                                     limb = (((limb ^ (sign as u8)) & WMASK) | 1) - ((sign >>1).abs() as u8);  
-                                    code = (code << WSIZE).bitor(&BigUint::from_u8(limb as u8).unwrap());
+                                    code = (code << WSIZE).bitor(&BigUint::from_u8(limb).unwrap());
                                     x = x >> WSIZE;
                                 }
         code >> 1
@@ -37,17 +37,17 @@ pub fn recod_scalar_glv2(scalar:&BigUint, lambda : &BigUint) -> BigUint
     {   let mut x1 = scalar % lambda;
         let mut x2 = scalar / lambda;
         let ff: BigUint = BigUint::from_str("255").unwrap();
-        let t1 = (&x1).bitand((ff).clone()).to_u8().unwrap_or(0);
-        let t2 = lambda.bitand((ff).clone()).to_u8().unwrap_or(0);
+        let t1 = (&x1).bitand(ff.clone()).to_u8().unwrap_or(0);
+        let t2 = lambda.bitand(ff.clone()).to_u8().unwrap_or(0);
         let beta = BigUint::from((!t1 & 1)*(t2 & 1));
         x1 = &x1 + &beta * lambda;
         x2 = &x2 - &beta;
-        let mut mu = ((&x1).bitor(&x2)).bits();
+        let mut mu = (&x1).bitor(&x2).bits();
         mu = mu + (WDSIZE as u64) - (mu % (WSIZE as u64));
         x1 = (&x1).bitor(BigUint::one() << mu); 
         let mut code = BigUint::one();    
-        while x1 != BigUint::one(){ let limb_x1 = (&x1).bitand((ff).clone()).to_u8().unwrap_or(0);
-                                    let limb_x2 = (&x2).bitand((ff).clone()).to_u8().unwrap_or(0);
+        while x1 != BigUint::one(){ let limb_x1 = (&x1).bitand(ff.clone()).to_u8().unwrap_or(0);
+                                    let limb_x2 = (&x2).bitand(ff.clone()).to_u8().unwrap_or(0);
                                     let sign = ((limb_x1 >> WSIZE) & 1) as i8 - 1 ;  
                                     let even = !limb_x2 & 1;
                                     let mut ai = ((limb_x1 ^ (sign as u8)) | 1) & WMASK;
@@ -55,10 +55,10 @@ pub fn recod_scalar_glv2(scalar:&BigUint, lambda : &BigUint) -> BigUint
                                     let di : i16 = ai as i16 - bi as i16;
                                     let tmp = (WMASK as i16 - (((sign as u8) | 1) as i16 * di)) as u8 ;
                                     let mut inc = (tmp & (bi + WMASK)) >> WSIZE;
-                                    ai = (((ai  as i16 - (bi * even) as i16)) as u8 ) & WMASK;
+                                    ai = ((ai  as i16 - (bi * even) as i16) as u8 ) & WMASK;
                                     bi = (di * even as i16 + bi as i16) as u8; 
-                                    inc = ((inc * even) as i8 + ((even as i8 - 1) * (sign as i8)) as i8) as u8;
-                                    let limb = even + (((sign as i8 + 1) as u8) << 1) + (((ai >> 1 ) + ((bi - 1) << 1)) << 2);
+                                    inc = ((inc * even) as i8 + ((even as i8 - 1) * (sign))) as u8;
+                                    let limb = even + (((sign + 1) as u8) << 1) + (((ai >> 1 ) + ((bi - 1) << 1)) << 2);
                                     code = (code << WDSIZE).bitor(&BigUint::from_u8(limb).unwrap());
                                     x1 =  x1 >> WSIZE;
                                     x2 = (x2 >> WSIZE) + BigUint::from(inc);
@@ -131,7 +131,7 @@ pub fn recod_scalar_gls8(scalar : &BigUint, u:u128,r:&BigUint) -> BigUint
                                 { let mut indic :i128 = -1;
                                   while indic != 0 { indic = ((decs[i] & (!decs[i & 4])) & (indic as u128)) as i128;
                                                      indic = indic ^ (-indic);  
-                                                     decs[i] = decs[i] + (indic.abs()) as u128;
+                                                     decs[i] = decs[i] + indic.abs() as u128;
                                                     }   
                                 }
                              }                                    
@@ -181,7 +181,7 @@ pub fn recod_scalar_gls16(scalar : &BigUint, u:u64, r:&BigUint) -> BigUint
                                 { let mut indic :i64 = -1;
                                   while indic != 0 { indic = ((decs[i] & (!decs[i - (i % 4)])) & (indic as u64)) as i64;
                                                      indic = indic ^ (-indic);  
-                                                     decs[i] = decs[i] + (indic.abs()) as u64;
+                                                     decs[i] = decs[i] + indic.abs() as u64;
                                                     }   
                                 }
                              }                                    

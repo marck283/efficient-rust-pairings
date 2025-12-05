@@ -36,12 +36,14 @@ impl <T> EcPoint <T>
                         let yy   = self.y.sqr();
                         let yy_2 = yy.sqr();
                         let zz   = self.z.sqr();
-                        let s    = (self.x.addto(&yy).sqr().substract(&xx).substract(&yy_2)).double();
+                        let s    = self.x.addto(&yy).sqr().substract(&xx).substract(&yy_2).double();
+                        //let s    = self.x.multiply(&yy).double().double();
                         let m    = xx.double().addto(&xx);
                         let t    = m.sqr().substract(&s.double());
                         Self  { x: t.clone(),
                                 y: m.multiply(&s.substract(&t)).substract(&yy_2.double().double().double()),
-                                z: self.y.addto(&self.z).sqr().substract(&yy).substract(&zz) 
+                                z: self.y.addto(&self.z).sqr().substract(&yy).substract(&zz)
+                                //z: self.y.multiply(&self.z).double()
                               }
                     }
     }
@@ -66,7 +68,7 @@ impl <T> EcPoint <T>
                                 let x3 = r.sqr().substract(&j).substract(&v.double());
                                 Self {  x: x3.clone(), 
                                         y: r.multiply(&v.substract(&x3)).substract(&s1.multiply(&j).double()),
-                                        z: (self.z.addto(&rhs.z).sqr().substract(&z1_2).substract(&z2_2)).multiply(&h)}
+                                        z: self.z.addto(&rhs.z).sqr().substract(&z1_2).substract(&z2_2).multiply(&h)}
                             }
                     }
                 }
@@ -106,42 +108,52 @@ impl <T> EcPoint <T>
                 }
         }
 
-    pub fn multiply<const N:usize>(&self , scalar :&FieldElement<N>) -> EcPoint<T>{
-                // Constant-time multiplication using w-sliding window (w=3)
-                let infinit = Self {x:self.x.one(), y : self.x.one(), z: self.x.zero() };
-                let ff: BigUint = BigUint::from_str("255").unwrap();
-                if self.z.is_zero()  {infinit}
-                else {  let s = scalar.to_big_uint();
-                        if s == BigUint::zero() {infinit.clone()}
-                        else {  if s == BigUint::one() {self.clone()}
-                                else {  if s == (BigUint::from(2u8))  { self.double_jacobian()}
-                                        else {  let mut lookup = [infinit;5];
-                                                lookup[0] = self.double_jacobian();
-                                                lookup[1] = self.clone();
-                                                lookup[2] = self.add_jacobian(&lookup[0]);  
-                                                lookup[3] = lookup[0].add_jacobian(&lookup[2]);  
-                                                lookup[4] = lookup[0].add_jacobian(&lookup[3]);  
-                                                let mut code = recod_one_scalar(&(&s + ((&s).bitand(BigUint::one()) + BigUint::one())));                                                
-                                                let mut result = lookup[(((&code).bitand((ff).clone()).to_u8().unwrap() & (WMASK >> 1)) + 1) as usize];
-                                                code = code >> (WSIZE -1);
-                                                while code != BigUint::one() {  let limb = (&code).bitand((ff).clone()).to_u8().unwrap();
-                                                                                let sig : i8 = (2 * (limb & 1) as i8) - 1; //2 * ((limb as i8) & 1) - 1;                                                                                
-                                                                                let idx: usize = (((limb & WMASK) >> 1) + 1) as usize;                                                                                
-                                                                                result = result.double_jacobian(); 
-                                                                                result = result.double_jacobian(); 
-                                                                                result = result.double_jacobian(); 
-                                                                                if sig == 1 {result = result.add_jacobian(&lookup[idx])}
-                                                                                else {result = result.add_jacobian(&lookup[idx].negate())}
-                                                                                code = code >> WSIZE;
-                                                                             }                
-                                                result.to_affine();
-                                                result = result.add_jacobian(&lookup[1 - (&s).bitand(BigUint::one()).to_usize().unwrap()].negate());                                  
-                                                result 
-                                                } 
-                                      }    
-                              }
-                     }
+    pub fn multiply<const N:usize>(&self , scalar :&FieldElement<N>) -> EcPoint<T> {
+        // Constant-time multiplication using w-sliding window (w=3)
+        let infinit = Self {x:self.x.one(), y : self.x.one(), z: self.x.zero() };
+        let ff: BigUint = BigUint::from_str("255").unwrap();
+        if self.z.is_zero()  {
+            infinit
+        } else {
+            let s = scalar.to_big_uint();
+            if s == BigUint::zero() {
+                infinit.clone()
+            } else {
+                if s == BigUint::one() {
+                    self.clone()
+                } else {
+                    if s == (BigUint::from(2u8))  {
+                        self.double_jacobian()
+                    } else {
+                        let mut lookup = [infinit;5];
+                        lookup[0] = self.double_jacobian();
+                        lookup[1] = self.clone();
+                        lookup[2] = self.add_jacobian(&lookup[0]);
+                        lookup[3] = lookup[0].add_jacobian(&lookup[2]);
+                        lookup[4] = lookup[0].add_jacobian(&lookup[3]);
+                        let mut code = recod_one_scalar(&(&s + ((&s).bitand(BigUint::one()) + BigUint::one())));
+                        let mut result = lookup[(((&code).bitand(ff.clone()).to_u8().unwrap() & (WMASK >> 1)) + 1) as usize];
+                        code = code >> (WSIZE -1);
+                        while code != BigUint::one() {
+                            let limb = (&code).bitand(ff.clone()).to_u8().unwrap();
+                            let sig : i8 = (2 * (limb & 1) as i8) - 1; //2 * ((limb as i8) & 1) - 1;
+                            let idx: usize = (((limb & WMASK) >> 1) + 1) as usize;
+                            result = result.double_jacobian().double_jacobian().double_jacobian();
+                            if sig == 1 {
+                                result = result.add_jacobian(&lookup[idx])
+                            } else {
+                                result = result.add_jacobian(&lookup[idx].negate())
+                            }
+                            code = code >> WSIZE;
+                        }
+                        result.to_affine();
+                        result = result.add_jacobian(&lookup[1 - (&s).bitand(BigUint::one()).to_usize().unwrap()].negate());
+                        result
+                    }
                 }
+            }
+        }
+    }
 
     pub fn to_affine (& mut self) {
                  if ! self.z.is_zero(){ let d = self.z.invert();

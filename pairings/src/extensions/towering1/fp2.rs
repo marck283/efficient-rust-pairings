@@ -33,14 +33,20 @@ impl<const N: usize> ExtField<0,2,N> for Fp2Field<N> {
 
 
 impl <const N:usize> ExtElement<0,2,N> for Fp2Element<N>{
-    fn new(content :&[FieldElement<N>; 2],_consts :Option<&ExFieldConsts<0,N>>) -> Fp2Element<N>
-        {   Fp2Element{content :content.clone()}    }
-
-    fn content_interface(&self) -> &[super::super::super::fields::prime_fields::FieldElement<N>;2]
+    fn content_interface(&self) -> &[FieldElement<N>;2]
         {   &self.content   }
-    
+
     fn constants_interface(&self) -> Option<&'static ExFieldConsts<0,N>>{
         None
+    }
+
+    fn multiply(&self, rhs:&Self) -> Self {
+        let v0 =self.content[0].multiply(&rhs.content[0]);
+        let v1 =self.content[1].multiply(&rhs.content[1]);
+        Self {content : [v0.substract(&v1),
+            self.content[0].addto(&self.content[1]).multiply(
+                            &rhs.content[0].addto(&rhs.content[1])).substract(&v0).substract(&v1)
+                                    ]}
     }
 
     fn sqr(&self) -> Self {
@@ -50,14 +56,8 @@ impl <const N:usize> ExtElement<0,2,N> for Fp2Element<N>{
         Self {content : [v0.substract(&v1), v2.addto(&v2)]}
     }
 
-    fn multiply(&self, rhs:&Self) -> Self {        
-        let v0 =self.content[0].multiply(&rhs.content[0]);
-        let v1 =self.content[1].multiply(&rhs.content[1]);            
-        Self {content : [v0.substract(&v1),
-                            (self.content[0].addto(&self.content[1]).multiply(
-                                            &rhs.content[0].addto(&rhs.content[1])).substract(&v0).substract(&v1))
-                                    ]}
-    }
+    fn new(content :&[FieldElement<N>; 2],_consts :Option<&ExFieldConsts<0,N>>) -> Fp2Element<N>
+        {   Fp2Element{content :content.clone()}    }
 
 }
 
@@ -76,12 +76,12 @@ impl <const N:usize> Fp2Element<N>{
         self.conjugate()
     }   
     pub fn invert(&self) -> Self{
-        let  t = (self.content[0].sqr()).addto(&self.content[1].sqr()).invert();
-        Self {content :[self.content[0].multiply(&t),(self.content[1].multiply(&t)).negate()]}
+        let  t = self.content[0].sqr().addto(&self.content[1].sqr()).invert();
+        Self {content :[self.content[0].multiply(&t), self.content[1].multiply(&t).negate()]}
     }
     
     pub fn is_qr(&self) -> bool{
-        let rootdelta = (self.content[0].sqr()).addto(&self.content[1].sqr()).sqrt(); 
+        let rootdelta = self.content[0].sqr().addto(&self.content[1].sqr()).sqrt();
         rootdelta.is_some() 
     }
 
@@ -90,9 +90,9 @@ impl <const N:usize> Fp2Element<N>{
         let inv2 = FieldElement{mont_limbs: outparams.inv2, fieldparams:outparams };   
         let zero =Self {content:[ FieldElement{mont_limbs:outparams.zero,fieldparams:outparams},
                                                     FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}]};
-        let rootdelta = (self.content[0].sqr()).addto(&self.content[1].sqr()).sqrt(); 
+        let rootdelta = self.content[0].sqr().addto(&self.content[1].sqr()).sqrt();
         if rootdelta.is_some() {
-            let mut t1 = (self.content[0].addto(&rootdelta.unwrap())).multiply(&inv2);            
+            let mut t1 = self.content[0].addto(&rootdelta.unwrap()).multiply(&inv2);
             let mut a = t1.sqrt();
             if a.is_none() { t1 = t1.substract(&rootdelta.unwrap());                             
                              a  = t1.sqrt();   
@@ -107,7 +107,7 @@ impl <const N:usize> Fp2Element<N>{
             else { if a.unwrap().equal(&FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}) 
                             {  Some(zero) }
                    else {Some(Self{content:[a.unwrap(),
-                                            self.content[1].multiply(&(a.unwrap().addto(&a.unwrap())).invert())]
+                                            self.content[1].multiply(&a.unwrap().addto(&a.unwrap()).invert())]
                                   }
                              )
                         } 

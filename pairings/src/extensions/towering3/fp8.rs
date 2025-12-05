@@ -27,23 +27,39 @@ impl<const PARAMSIZE:usize,const N: usize> ExtField<PARAMSIZE,8,N> for Fp8Field<
     fn field_interface(&self)->PrimeField<N> 
         { self.base_field.clone() }
 
-    fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>)->  Fp8Field<PARAMSIZE,N>
-        { Fp8Field {base_field : (*base_field).clone(), constants: consts.unwrap()}}   
-    
     fn extconsts_interface(&self) ->Option<&'static ExFieldConsts<PARAMSIZE,N>> {
         Some(self.constants)
     }
+
+    fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>)->  Fp8Field<PARAMSIZE,N>
+        { Fp8Field {base_field : (*base_field).clone(), constants: consts.unwrap()}}
     }
 
 impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,8,N> for Fp8Element<PARAMSIZE,N>{
-    fn new(content :&[FieldElement<N>; 8], consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp8Element<PARAMSIZE,N>
-        {   Fp8Element{content :content.clone(), constants :consts.unwrap()}    }
-
-    fn content_interface(&self) -> &[super::super::super::fields::prime_fields::FieldElement<N>;8]
+    fn content_interface(&self) -> &[FieldElement<N>;8]
         {   &self.content   }
-    
+
     fn constants_interface(&self) -> Option<&'static ExFieldConsts<PARAMSIZE,N>> {
         Some(self.constants)
+    }
+
+    fn multiply(&self, rhs:&Self) -> Self {
+        let a0 = Fp4Element{ content : [ self.content[0],self.content[1],self.content[2],
+                                                           self.content[3]], constants:self.constants} ;
+        let b0 = Fp4Element{ content : [ self.content[4],self.content[5],self.content[6],
+                                                           self.content[7]], constants:self.constants};
+        let a1 = Fp4Element{ content : [ rhs.content[0],rhs.content[1],rhs.content[2],
+                                                           rhs.content[3]], constants:rhs.constants} ;
+        let b1 = Fp4Element{ content : [ rhs.content[4],rhs.content[5],rhs.content[6],
+                                                           rhs.content[7]], constants:rhs.constants};
+        let t0 = a0.multiply(&a1);
+        let t1 = b0.multiply(&b1);
+        let t2 = a0.addto(&b0).multiply(&a1.addto(&b1));
+        let a  = t1.mulby_v().negate().addto(&t0);
+        let b  = t2.substract(&t0).substract(&t1);
+        Self {  content : [ a.content[0], a.content[1], a.content[2], a.content[3],
+                            b.content[0], b.content[1], b.content[2], b.content[3]],
+                constants : self.constants }
     }
 
     fn sqr(&self) -> Self {
@@ -61,24 +77,8 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,8,N> for Fp8Elem
                 constants : self.constants }                                             
     }
 
-    fn multiply(&self, rhs:&Self) -> Self {       
-        let a0 = Fp4Element{ content : [ self.content[0],self.content[1],self.content[2], 
-                                                           self.content[3]], constants:self.constants} ;
-        let b0 = Fp4Element{ content : [ self.content[4],self.content[5],self.content[6],
-                                                           self.content[7]], constants:self.constants};                                                       
-        let a1 = Fp4Element{ content : [ rhs.content[0],rhs.content[1],rhs.content[2], 
-                                                           rhs.content[3]], constants:rhs.constants} ;
-        let b1 = Fp4Element{ content : [ rhs.content[4],rhs.content[5],rhs.content[6],
-                                                           rhs.content[7]], constants:rhs.constants};                                                       
-        let t0 = a0.multiply(&a1);       
-        let t1 = b0.multiply(&b1);     
-        let t2 = a0.addto(&b0).multiply(&a1.addto(&b1));
-        let a  = t1.mulby_v().negate().addto(&t0);
-        let b  = t2.substract(&t0).substract(&t1);
-        Self {  content : [ a.content[0], a.content[1], a.content[2], a.content[3],
-                            b.content[0], b.content[1], b.content[2], b.content[3]],
-                constants : self.constants }  
-    }
+    fn new(content :&[FieldElement<N>; 8], consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp8Element<PARAMSIZE,N>
+        {   Fp8Element{content :content.clone(), constants :consts.unwrap()}    }
 }
 
 impl <const PARAMSIZE:usize,const N:usize> Fp8Element <PARAMSIZE,N>{

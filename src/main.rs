@@ -5,9 +5,9 @@ use pairings::{tests::{bench_pairings, check_pairings}, BLS24Curves, BLS48Curves
 
 fn bls_signature_scheme<const R:usize,const N:usize,const MAX_COEFS_COUNT1:usize,const PRAMASIZE:usize, const MAX_COEFS_COUNT2 :usize>
       (engine :&Pairings <R, N, MAX_COEFS_COUNT1, PRAMASIZE, MAX_COEFS_COUNT2>){
-  // BLS Signature scheme : public keys are in G2 while siugnatures are in G1
+  // BLS Signature scheme : public keys are in G2 while signatures are in G1
   // An reverted scheme can also be implemented (public keys in G1 and signatures in G2) 
-  // according to the targted application resuirements. 
+  // according to the targeted application requirements.
   // ps: Hashing to elliptic curves support two modes :  
   //      mode = 0 stands for Non-uniform-Encoding, while mode = 1 stands for Random Oracle Model encoding 
   println!("----------------------------------------------------------------------------------------------");
@@ -15,13 +15,13 @@ fn bls_signature_scheme<const R:usize,const N:usize,const MAX_COEFS_COUNT1:usize
   // Key-paire genration :
   let sk = engine.fr.random_element();
   let pk = sk * engine.g2.default_generator();
-  println!(" Secrete key (base64) = {}", sk.to_base64());
+  println!(" Secret key (base64) = {}", sk.to_base64());
   println!(" Public Key  (base64) = {}", pk.encode_to_base64());       
   // BLS Signature : 
   let message = "This is a simple message to be signed. A message can be any arbitrary length string ....";
   let hashed_message = engine.g1.hash_to_field(&message, 0);
   let signature = sk * hashed_message;
-  println!(" Signatue is (base64): {}", signature.encode_to_base64());
+  println!(" Signature is (base64): {}", signature.encode_to_base64());
   // BLS Verification :
   let hashed_message = engine.g1.hash_to_field(&message, 0);
   let verification_result = engine.paire(&signature, &engine.g2.default_generator()) == engine.paire(&hashed_message, &pk);

@@ -34,14 +34,21 @@ impl<const PARAMSIZE:usize,const N: usize> ExtField<PARAMSIZE,2,N> for Fp2Field<
 
 
 impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,2,N> for Fp2Element<PARAMSIZE,N>{
-    fn new(content :&[FieldElement<N>; 2],consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp2Element<PARAMSIZE,N>
-        {   Fp2Element{content :content.clone(), constants :consts.unwrap()}    }
-
-    fn content_interface(&self) -> &[super::super::super::fields::prime_fields::FieldElement<N>;2]
+    fn content_interface(&self) -> &[FieldElement<N>;2]
         {   &self.content   }
-    
+
     fn constants_interface(&self) -> Option<&'static ExFieldConsts<PARAMSIZE,N>>{
         Some(self.constants)
+    }
+
+    fn multiply(&self, rhs:&Self) -> Self {
+        let v0 =self.content[0].multiply(&rhs.content[0]);
+        let v1 =self.content[1].multiply(&rhs.content[1]);
+        Self {content : [v0.addto(&v1.multiply(&self.constants.base_qnr)),
+            self.content[0].addto(&self.content[1]).multiply(
+                            &rhs.content[0].addto(&rhs.content[1])).substract(&v0).substract(&v1)
+                                    ],
+              constants :self.constants}
     }
 
     fn sqr(&self) -> Self {
@@ -51,15 +58,8 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,2,N> for Fp2Elem
         Self {content : [v0.addto(&v1.multiply(&self.constants.base_qnr)), v2.addto(&v2)], constants :self.constants}
     }
 
-    fn multiply(&self, rhs:&Self) -> Self {        
-        let v0 =self.content[0].multiply(&rhs.content[0]);
-        let v1 =self.content[1].multiply(&rhs.content[1]);            
-        Self {content : [v0.addto(&v1.multiply(&self.constants.base_qnr)),
-                            (self.content[0].addto(&self.content[1]).multiply(
-                                            &rhs.content[0].addto(&rhs.content[1])).substract(&v0).substract(&v1))
-                                    ],
-              constants :self.constants}
-    }
+    fn new(content :&[FieldElement<N>; 2],consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp2Element<PARAMSIZE,N>
+        {   Fp2Element{content :content.clone(), constants :consts.unwrap()}    }
 
 }
 
@@ -80,13 +80,13 @@ impl <const PARAMSIZE:usize,const N:usize> Fp2Element<PARAMSIZE, N>{
         self.conjugate()
     }   
     pub fn invert(&self) -> Self{
-        let  t = (self.content[0].sqr()).substract(&self.content[1].sqr().multiply(&self.constants.base_qnr)).invert();
-        Self {content :[self.content[0].multiply(&t),(self.content[1].multiply(&t)).negate()],
+        let  t = self.content[0].sqr().substract(&self.content[1].sqr().multiply(&self.constants.base_qnr)).invert();
+        Self {content :[self.content[0].multiply(&t), self.content[1].multiply(&t).negate()],
               constants :self.constants  }
     }
     
     pub fn is_qr(&self) -> bool{
-        let rootdelta = (self.content[0].sqr()).substract(&self.content[1].sqr().multiply(&self.constants.base_qnr)).sqrt(); 
+        let rootdelta = self.content[0].sqr().substract(&self.content[1].sqr().multiply(&self.constants.base_qnr)).sqrt();
         rootdelta.is_some() 
     }
 
@@ -96,9 +96,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp2Element<PARAMSIZE, N>{
         let zero =Self {content:[ FieldElement{mont_limbs:outparams.zero,fieldparams:outparams},
                                                     FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}],
                                                   constants :self.constants  };
-        let rootdelta = (self.content[0].sqr()).substract(&self.content[1].sqr().multiply(&self.constants.base_qnr)).sqrt(); 
+        let rootdelta = self.content[0].sqr().substract(&self.content[1].sqr().multiply(&self.constants.base_qnr)).sqrt();
         if rootdelta.is_some() {
-            let mut t1 = (self.content[0].addto(&rootdelta.unwrap())).multiply(&inv2);            
+            let mut t1 = self.content[0].addto(&rootdelta.unwrap()).multiply(&inv2);
             let mut a = t1.sqrt();
             if a.is_none() { t1 = t1.substract(&rootdelta.unwrap());                             
                              a  = t1.sqrt();   

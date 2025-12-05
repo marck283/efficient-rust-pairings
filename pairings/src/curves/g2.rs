@@ -94,7 +94,7 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT :u
             pub fn multiply_gls(&self , scalar :&FieldElement<R>) -> Self
             {
                 let _scalar: BigUint = scalar.to_big_uint();
-                if _scalar.bits()>((scalar.fieldparams.num_of_bits - (scalar.fieldparams.num_of_bits / self.consts.order))).try_into().unwrap()
+                if _scalar.bits()> (scalar.fieldparams.num_of_bits - (scalar.fieldparams.num_of_bits / self.consts.order)).try_into().unwrap()
                 {match self.point.x {   ExtFieldG2Element::Fp2_1(_) => gls4_multiply_bls12(&self, scalar),
                                         ExtFieldG2Element::Fp4_1(_) => gls8_multiply_bls24(&self, scalar),
                                         ExtFieldG2Element::Fp8_1(_) => gls16_multiply_bls48(&self, scalar),

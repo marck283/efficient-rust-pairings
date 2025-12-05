@@ -42,18 +42,18 @@ impl <const N:usize,const R:usize > Exponent<N> for FieldElement<R> {
         result[0..R].copy_from_slice(&from_mont);
         Some(result)
     }
-    
-    fn get_len(&self)->usize { R }
 
     fn to_naf(&self) -> Vec<i8>{
         let mut one :[u64;R] = [0;R];
         one[0] = 1;
-        let mut as_big : BigUint = BigUint::zero();    
+        let mut as_big : BigUint = BigUint::zero();
         let from_mont  : [u64;R] = arithmetic::mul(&self.mont_limbs,&one,&self.fieldparams);
         println!("{:?}",from_mont);
-        for i in 0..R {as_big += from_mont[i].to_biguint().unwrap() << (i * 64)};        
+        for i in 0..R {as_big += from_mont[i].to_biguint().unwrap() << (i * 64)};
         get_naf(as_big)
-        }   
+        }
+
+    fn get_len(&self)->usize { R }
 }
 
 impl <const N:usize > Exponent<N> for u8 {
@@ -87,7 +87,7 @@ impl <const N:usize > Exponent<N> for u32 {
 impl <const N:usize >Exponent<N> for u64 {
     fn to_u64_array(&self) -> Option<[u64; N]> {
         let mut _a=[0;N];
-        _a[0] = *self as u64;
+        _a[0] = *self;
         Some(_a)
     }
 

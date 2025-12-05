@@ -77,7 +77,7 @@ pub fn expand_message_xmd(message: &[u8], dst: &[u8], len: usize) -> Vec<u8> {
 
 pub fn hash_bytes_to_field<const N:usize>(msg :&[u8],count :usize,field:&PrimeField<N>,dst:&[u8],sec_level:usize, ext_degree :usize) -> Vec<FieldElement<N>>
 {
-    let l = ((field.parametres.numlimbs * 64) + sec_level as usize) >> 3;    
+    let l = ((field.parametres.numlimbs * 64) + sec_level) >> 3;
     let byteslength = count * ext_degree * l;    
     let prngbytes = expand_message_xmd(msg, dst, byteslength);
     let mut result = Vec::<FieldElement<N>>::new();
