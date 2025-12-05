@@ -148,10 +148,10 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
             {   
                 self.multiply(&self.consts.lambda).equal(&self.phi())
             }
-            pub fn to_string(&self ) -> String
-            {
-                self.point.to_string()
-            } 
+            //pub fn to_string(&self ) -> String
+            //{
+            //    self.point.to_string()
+            //}
             pub fn to_hex_string(&self ) -> String
             {
                 self.point.to_hex_string()
@@ -328,7 +328,7 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
 
 impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> fmt::Display for G1Element<R,N,MAX_COEFS_COUNT> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(f, "{:}", &self.to_string())
+            write!(f, "{:}", &self.point.to_string())
         }
     }
 

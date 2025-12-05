@@ -153,10 +153,10 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT :u
                 let z6 = self.point.z.sqr().multiply(&self.point.z).sqr();
                 self.point.y.sqr().equal(&self.point.x.sqr().multiply(&self.point.x).addto(&self.consts.b.multiply(&z6)))
             }
-            pub fn to_string(&self) -> String
-            {
-                self.point.to_string()
-            }             
+            //pub fn to_string(&self) -> String
+            //{
+            //    self.point.to_string()
+            //}
             pub fn to_hex_string(&self) -> String
             {
                 self.point.to_hex_string()
@@ -408,7 +408,7 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT : 
     
 impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> fmt::Display for G2Element<PRAMASIZE,R,N,MAX_COEFS_COUNT> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(f, "{:}", &self.to_string())
+            write!(f, "{:}", &self.point.to_string())
         }
     }
 impl  <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> Add for G2Element<PRAMASIZE,R,N,MAX_COEFS_COUNT> {
