@@ -186,21 +186,21 @@ impl  BLS48Curves for BLS48 {
     fn _575() ->&'static Pairings<9, 9, 4, 24,  7>
     {
         bls48_575_engine()
-    }   
-
-    fn _581() ->&'static Pairings<9, 10, 3, 24,  4>
-    {
-        bls48_581_engine()
     }
 
     fn _573() ->&'static Pairings<8, 9, 7, 24,  4>
     {
         bls48_573_engine()
-    }  
+    }
 
     fn _571() ->&'static Pairings<8, 9, 3, 36,  4>
     {
         bls48_571_engine()
+    }
+
+    fn _581() ->&'static Pairings<9, 10, 3, 24,  4>
+    {
+        bls48_581_engine()
     }   
 
     fn _287() ->&'static Pairings<4, 5, 4, 35,  19>
