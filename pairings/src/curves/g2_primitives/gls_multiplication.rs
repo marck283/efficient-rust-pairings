@@ -40,21 +40,11 @@ pub fn gls4_multiply_bls12<const PRAMASIZE:usize, const R: usize, const N: usize
     
     let ff: BigUint = BigUint::from_str("255").unwrap();
     let mut code = recod_scalar_gls4(&scalar.to_big_uint(),&scalar.negate().to_big_uint(),input.consts.u.abs() as u128);
-    let mut p1 = input.phi();
-    let p2 = p1.phi();
-    let mut p3 = p2.phi();
+
     let infinit = create_infinit(input);
-    if input.consts.u < 0 {   p1 = p1.negate();
-                              p3 = p3.negate()};                                                                             
     let mut lookup = [infinit;8];    
-    lookup[0] = input.clone();
-    lookup[1] = p1.addto(&lookup[0]);
-    lookup[2] = p2.addto(&lookup[0]);
-    lookup[3] = p2.addto(&lookup[1]);
-    lookup[4] = p3.addto(&lookup[0]);
-    lookup[5] = p3.addto(&lookup[1]);
-    lookup[6] = p3.addto(&lookup[2]);
-    lookup[7] = p3.addto(&lookup[3]);   
+    populate_lookup1(input, &mut lookup);
+
     let mut limb : u8 = (&code).bitand(ff.clone()).to_u8().unwrap();
     let out_sig : i8 =  1 - ((limb & 1) << 1) as i8;
     code = code >> 1;
@@ -68,7 +58,7 @@ pub fn gls4_multiply_bls12<const PRAMASIZE:usize, const R: usize, const N: usize
         limb = (&code).bitand(ff.clone()).to_u8().unwrap();
         sign = ((limb & 1) << 1) as i8 - 1;
         idx =  ((limb & 15) >> 1) as usize;
-        result = result.addto(& compute_res(sign, &lookup, idx));
+        result = result.addto(&compute_res(sign, &lookup, idx));
         code = code >> 4;
     }
     if out_sig == 1 {
@@ -76,6 +66,51 @@ pub fn gls4_multiply_bls12<const PRAMASIZE:usize, const R: usize, const N: usize
     } else {
         result.negate()
     }
+}
+
+fn populate_lookup1<const PRAMASIZE: usize, const R: usize,
+    const N: usize, const MAX_COEFS_COUNT: usize>(input: &G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>,
+                                                  lookup1: &mut [G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>; 8]) {
+    let mut p1 = input.phi();
+    let p2 = p1.phi();
+    let mut p3 = p2.phi();
+
+    if input.consts.u < 0 {
+        p1 = p1.negate();
+        p3 = p3.negate()
+    };
+
+    lookup1[0] = input.clone();
+    lookup1[1] = p1.addto(&lookup1[0]);
+    lookup1[2] = p2.addto(&lookup1[0]);
+    lookup1[3] = p2.addto(&lookup1[1]);
+    lookup1[4] = p3.addto(&lookup1[0]);
+    lookup1[5] = p3.addto(&lookup1[1]);
+    lookup1[6] = p3.addto(&lookup1[2]);
+    lookup1[7] = p3.addto(&lookup1[3]);
+}
+
+fn create_lookup<const PRAMASIZE: usize, const R: usize,
+    const N: usize, const MAX_COEFS_COUNT: usize>(infinit: G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>,
+                                                  lookup1: &[G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>; 8],
+                                                  degree: u8) -> [G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>; 8] {
+    let mut arg = [infinit; 8];
+
+    match degree {
+        24 => {
+            arg.iter_mut()
+                .zip(lookup1.iter().map(|x| phi_bls24(x,4)))
+                .for_each(|(dest, src)| *dest = src);
+        },
+        48 => {
+            arg.iter_mut()
+                .zip(lookup1.iter().map(|x| phi_bls48(x,4)))
+                .for_each(|(dest, src)| *dest = src);
+        },
+        _ => panic!("Invalid degree value")
+    }
+
+    arg
 }
 
 pub fn gls8_multiply_bls24<const PRAMASIZE:usize, const R: usize, const N: usize, const MAX_COEFS_COUNT: usize>
@@ -87,28 +122,13 @@ pub fn gls8_multiply_bls24<const PRAMASIZE:usize, const R: usize, const N: usize
     let mut code = recod_scalar_gls8(&scalar.to_big_uint(),
                                                input.consts.u.abs() as u128,
                                                &BigUint::from_str_radix(&input.consts.lambda.fieldparams.modulo_as_strhex[2..],16).unwrap());
-    let mut p1 = input.phi();
-    let p2 = p1.phi();
-    let mut p3 = p2.phi();
     let infinit = create_infinit(input);
-    if input.consts.u < 0 { p1 = p1.negate();
-                            p3 = p3.negate()};                                                                             
-    let mut lookup1: [G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>; 8] = [infinit;8];    
-    lookup1[0] = input.clone();
-    lookup1[1] = p1.addto(&lookup1[0]);
-    lookup1[2] = p2.addto(&lookup1[0]);
-    lookup1[3] = p2.addto(&lookup1[1]);
-    lookup1[4] = p3.addto(&lookup1[0]);
-    lookup1[5] = p3.addto(&lookup1[1]);
-    lookup1[6] = p3.addto(&lookup1[2]);
-    lookup1[7] = p3.addto(&lookup1[3]);
-    let lookup2  = {
-        let mut arg = [infinit; 8];
-        arg.iter_mut()
-            .zip(lookup1.iter().map(|x| phi_bls24(x,4)))
-            .for_each(|(dest, src)| *dest = src);
-        arg
-    };    
+    let mut lookup1: [G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>; 8] = [infinit;8];
+
+    populate_lookup1(input, &mut lookup1);
+
+    let lookup2  = create_lookup(infinit, &lookup1, 24);
+
     let mut limb : u8 = (&code).bitand(ff.clone()).to_u8().unwrap();
     let out_sig : i8 =  1 - ((limb & 1) << 1) as i8;    
     code = code >> 1;
@@ -131,17 +151,6 @@ pub fn gls8_multiply_bls24<const PRAMASIZE:usize, const R: usize, const N: usize
     if out_sig == 1 {result} else {result.negate()}
 }
 
-fn create_lookup<const PRAMASIZE: usize, const R: usize,
-    const N: usize, const MAX_COEFS_COUNT: usize>(infinit: G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>,
-                                                  lookup1: [G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>; 8]) ->
-                                                  [G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>; 8] {
-    let mut arg = [infinit; 8];
-    arg.iter_mut()
-        .zip(lookup1.iter().map(|x| phi_bls48(x,4)))
-        .for_each(|(dest, src)| *dest = src);
-    arg
-}
-
 fn get_sign_tuple(c1: &usize, c2: &usize, c3: &usize, c4: &usize) -> (i8, i8, i8, i8) {
     (((c1 & 1) << 1) as i8 - 1, ((c2 & 1) << 1) as i8 - 1, ((c3 & 1) << 1) as i8 - 1, ((c4 & 1) << 1) as i8 - 1)
 }
@@ -149,30 +158,21 @@ fn get_sign_tuple(c1: &usize, c2: &usize, c3: &usize, c4: &usize) -> (i8, i8, i8
 pub fn gls16_multiply_bls48<const PRAMASIZE:usize, const R: usize, const N: usize, const MAX_COEFS_COUNT: usize>
             (input :&G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT>, scalar :&FieldElement<R>) -> G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT>
 {   
-    //  Constant-Time multiplication for elements in G2 (16-GLS): GLS Implementation of points multiplication on G2 for the BLS48 Curve    //  Inspired from Joppe W. Bos, Craig Costello, and Michael Naehrig https://eprint.iacr.org/2013/458.pdf    
+    //  Constant-Time multiplication for elements in G2 (16-GLS): GLS Implementation of points multiplication on G2 for the BLS48 Curve    //  Inspired from Joppe W. Bos, Craig Costello, and Michael Naehrig https://eprint.iacr.org/2013/458.pdf
     let ffff: BigUint = BigUint::from_str("65535").unwrap();
     let mut code = recod_scalar_gls16(&scalar.to_big_uint(),
                                                input.consts.u.abs() as u64,
-                                               &BigUint::from_str_radix(&input.consts.lambda.fieldparams.modulo_as_strhex[2..],16).unwrap());                      
-    let mut p1 = input.phi();
-    let p2 = p1.phi();
-    let mut p3 = p2.phi();
-    let infinit = create_infinit(input);
-    if input.consts.u < 0 { p1 = p1.negate();
-                            p3 = p3.negate()};                                                                             
-    let mut lookup1: [G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>; 8] = [infinit;8];    
-    lookup1[0] = input.clone();
-    lookup1[1] = p1.addto(&lookup1[0]);
-    lookup1[2] = p2.addto(&lookup1[0]);
-    lookup1[3] = p2.addto(&lookup1[1]);
-    lookup1[4] = p3.addto(&lookup1[0]);
-    lookup1[5] = p3.addto(&lookup1[1]);
-    lookup1[6] = p3.addto(&lookup1[2]);
-    lookup1[7] = p3.addto(&lookup1[3]);
+                                               &BigUint::from_str_radix(&input.consts.lambda.fieldparams.modulo_as_strhex[2..],16).unwrap());
 
-    let lookup2 = create_lookup(infinit, lookup1);
-    let lookup3 = create_lookup(infinit, lookup2);
-    let lookup4 = create_lookup(infinit, lookup3);
+    let infinit = create_infinit(input);
+
+    let mut lookup1: [G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>; 8] = [infinit;8];
+
+    populate_lookup1(input, &mut lookup1);
+
+    let lookup2 = create_lookup(infinit, &lookup1, 48);
+    let lookup3 = create_lookup(infinit, &lookup2, 48);
+    let lookup4 = create_lookup(infinit, &lookup3, 48);
 
     let mut limb : u16 = (&code).bitand(ffff.clone()).to_u16().unwrap();
     let out_sig : i8 =  1 - ((limb & 1) << 1) as i8;    
