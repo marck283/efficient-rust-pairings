@@ -78,7 +78,7 @@ fn populate_lookup1<const PRAMASIZE: usize, const R: usize,
     if input.consts.u < 0 {
         p1 = p1.negate();
         p3 = p3.negate()
-    };
+    }
 
     lookup1[0] = input.clone();
     lookup1[1] = p1.addto(&lookup1[0]);
