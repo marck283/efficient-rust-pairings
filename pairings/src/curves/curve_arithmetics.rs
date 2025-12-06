@@ -18,60 +18,70 @@ pub struct EcPoint<T> {
     pub z: T,
 }
 
-impl <T> EcPoint <T>
-    where 
-    T :ArithmeticOperations + Clone + Copy + Display,    
-{      
-    pub fn negate(&self) -> EcPoint<T>
-    {
-        Self  { x: self.x.clone(),
-                y: self.y.clone().negate(),
-                z: self.z.clone() }
+impl <T> EcPoint<T> where T :ArithmeticOperations + Clone + Copy + Display, {
+    pub fn negate(&self) -> EcPoint<T> {
+        Self {
+            x: self.x.clone(),
+            y: self.y.clone().negate(),
+            z: self.z.clone()
+        }
     }
 
-    pub fn double_jacobian(&self)-> EcPoint<T>{
-                if self.z.is_zero() { self.clone() }
-                else {  // https://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-dbl-2007-bl
-                        let xx   = self.x.sqr();
-                        let yy   = self.y.sqr();
-                        let yy_2 = yy.sqr();
-                        let zz   = self.z.sqr();
-                        let s    = self.x.addto(&yy).sqr().substract(&xx).substract(&yy_2).double();
-                        //let s    = self.x.multiply(&yy).double().double();
-                        let m    = xx.double().addto(&xx);
-                        let t    = m.sqr().substract(&s.double());
-                        Self  { x: t.clone(),
-                                y: m.multiply(&s.substract(&t)).substract(&yy_2.double().double().double()),
-                                z: self.y.addto(&self.z).sqr().substract(&yy).substract(&zz)
-                                //z: self.y.multiply(&self.z).double()
-                              }
-                    }
+    pub fn double_jacobian(&self)-> EcPoint<T> {
+        if self.z.is_zero() {
+            self.clone()
+        } else {
+            // https://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-dbl-2007-bl (with a = 0)
+            let xx   = self.x.sqr();
+            let yy   = self.y.sqr();
+            let yy_2 = yy.sqr();
+            //let zz   = self.z.sqr();
+            //let s    = self.x.addto(&yy).sqr().substract(&xx).substract(&yy_2).double();
+            let s    = self.x.multiply(&yy).double().double();
+            let m    = xx.double().addto(&xx);
+            let t    = m.sqr().substract(&s.double());
+            Self {
+                x: t.clone(),
+                y: m.multiply(&s.substract(&t)).substract(&yy_2.double().double().double()),
+                //z: self.y.addto(&self.z).sqr().substract(&yy).substract(&zz)
+                z: self.y.multiply(&self.z).double()
+            }
+        }
     }
 
     pub fn add_jacobian(&self, rhs :&EcPoint<T>) -> EcPoint<T>{
-                if self.z.is_zero() { if rhs.z.is_zero() { self.clone() }
-                                      else { rhs.clone() }  
-                                    }
-                else { if rhs.z.is_zero() { self.clone() }
-                       else {   // https://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-add-2007-bl
-                                let z1_2 = self.z.sqr();
-                                let z2_2 = rhs.z.sqr();
-                                let u1 = self.x.multiply(&z2_2);
-                                let u2 = rhs.x.multiply(&z1_2);
-                                let s1 = self.y.multiply(&rhs.z).multiply(&z2_2);
-                                let s2 = rhs.y.multiply(&self.z).multiply(&z1_2);
-                                let h  = u2.substract(&u1);
-                                let i  = h.double().sqr();
-                                let j  = h.multiply(&i);
-                                let r  = s2.substract(&s1).double();
-                                let v  = u1.multiply(&i);
-                                let x3 = r.sqr().substract(&j).substract(&v.double());
-                                Self {  x: x3.clone(), 
-                                        y: r.multiply(&v.substract(&x3)).substract(&s1.multiply(&j).double()),
-                                        z: self.z.addto(&rhs.z).sqr().substract(&z1_2).substract(&z2_2).multiply(&h)}
-                            }
-                    }
+        if self.z.is_zero() {
+            if rhs.z.is_zero() {
+                self.clone()
+            } else {
+                rhs.clone()
+            }
+        } else {
+            if rhs.z.is_zero() {
+                self.clone()
+            } else {
+                // https://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-add-2007-bl
+                let z1_2 = self.z.sqr();
+                let z2_2 = rhs.z.sqr();
+                let u1 = self.x.multiply(&z2_2);
+                let u2 = rhs.x.multiply(&z1_2);
+                let s1 = self.y.multiply(&rhs.z).multiply(&z2_2);
+                let s2 = rhs.y.multiply(&self.z).multiply(&z1_2);
+                let h  = u2.substract(&u1);
+                let i  = h.double().sqr();
+                let j  = h.multiply(&i);
+                let r  = s2.substract(&s1).double();
+                let v  = u1.multiply(&i);
+                let x3 = r.sqr().substract(&j).substract(&v.double());
+                Self {
+                    x: x3.clone(),
+                    y: r.multiply(&v.substract(&x3)).substract(&s1.multiply(&j).double()),
+                    //z: self.z.addto(&rhs.z).sqr().substract(&z1_2).substract(&z2_2).multiply(&h)
+                    z: self.z.multiply(&rhs.z).multiply(&h).double()
                 }
+            }
+        }
+    }
 
     pub fn mixed_jacobian(&self, rhs :&EcPoint<T>) -> EcPoint<T>{
                 // https://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-madd-2007-bl
@@ -94,23 +104,36 @@ impl <T> EcPoint <T>
     pub fn multiply_with_const(&self , scalar :i128) -> EcPoint<T>{
         //  not Constant-time multiplication, used when multiplying with small constant
         //  no need for resistance to side-channel attacks !, so can do faster
-        let e : u128 = scalar.abs() as u128;     
-        match e { 0 => {    EcPoint{ x: self.x.one(), y: self.x.one(), z: self.x.zero() }},
-                  2 => {    self.double_jacobian() },
-                  _ => {    let mut result = EcPoint{ x: self.x.one(), y: self.x.one(), z: self.x.zero() };
-                            let bitlen = 128 - e.leading_zeros();
-                            for i in (0..bitlen).rev()
-                                    {   result = result.double_jacobian();
-                                        if (e >> i) & 1 == 1 {result =result.add_jacobian(&self)}                
-                                    }
-                            if scalar>0 {result} else {result.negate()}
-                        }  
+        let e : u128 = scalar.abs() as u128;
+        let infinit = Self { x: self.x.one(), y: self.x.one(), z: self.x.zero() };
+        match e {
+            0 => {
+                infinit
+            },
+            2 => {
+                self.double_jacobian()
+            },
+            _ => {
+                let mut result = infinit;
+                let bitlen = 128 - e.leading_zeros();
+                for i in (0..bitlen).rev() {
+                    result = result.double_jacobian();
+                    if (e >> i) & 1 == 1 {
+                        result = result.add_jacobian(&self)
+                    }
                 }
+                if scalar > 0 {
+                    result
+                } else {
+                    result.negate()
+                }
+            }
         }
+    }
 
     pub fn multiply<const N:usize>(&self , scalar :&FieldElement<N>) -> EcPoint<T> {
         // Constant-time multiplication using w-sliding window (w=3)
-        let infinit = Self {x:self.x.one(), y : self.x.one(), z: self.x.zero() };
+        let infinit = Self { x: self.x.one(), y: self.x.one(), z: self.x.zero() };
         let ff: BigUint = BigUint::from_str("255").unwrap();
         if self.z.is_zero()  {
             infinit

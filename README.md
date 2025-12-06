@@ -21,7 +21,7 @@ Some security related parameters of the implemented curves are listed in the fol
   <thead>
     <tr>
       <th>                </th>
-      <th>k (Embdedding degree) </th>
+      <th>k (Embedding degree) </th>
       <th>p (bits)</th>
       <th>r (bits)</th>
       <th>$P^{(k/d)}$ / $G_2$ (bits)</th> 

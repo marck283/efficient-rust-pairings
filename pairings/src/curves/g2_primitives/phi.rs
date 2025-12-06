@@ -4,16 +4,16 @@
 
 use std::ops::{Add, Sub};
 
-use crate::{curves::{curve_arithmetics::EcPoint, g2::G2Element}, 
-            extensions::ext_fields::ExtElement, 
-            extensions::towering1::fp2::Fp2Element as Fp2Element_1, 
-            extensions::towering1::fp4::Fp4Element as Fp4Element_1, 
-            extensions::towering1::fp8::Fp8Element as Fp8Element_1, 
-            extensions::towering2::fp4::Fp4Element as Fp4Element_2, 
-            extensions::towering2::fp8::Fp8Element as Fp8Element_2, 
-            extensions::towering3::fp8::Fp8Element as Fp8Element_3, 
-            extensions::g2_extfields::ExtFieldG2Element, 
-            fields::prime_fields::FieldElement, 
+use crate::{curves::{curve_arithmetics::EcPoint, g2::G2Element},
+            extensions::ext_fields::ExtElement,
+            extensions::g2_extfields::ExtFieldG2Element,
+            extensions::towering1::fp2::Fp2Element as Fp2Element_1,
+            extensions::towering1::fp4::Fp4Element as Fp4Element_1,
+            extensions::towering1::fp8::Fp8Element as Fp8Element_1,
+            extensions::towering2::fp4::Fp4Element as Fp4Element_2,
+            extensions::towering2::fp8::Fp8Element as Fp8Element_2,
+            extensions::towering3::fp8::Fp8Element as Fp8Element_3,
+            fields::prime_fields::FieldElement,
             tools::arithmetic_interface::ArithmeticOperations};
 
 pub fn phi_bls12<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX_COEFS_COUNT: usize>
@@ -49,24 +49,39 @@ pub fn phi_bls24<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
         // Un-Twist : (x,y)->(x/z^2,y/z^3)
         // Combinaison of the three maps is equivalent to one multiplication by constants: (c1,c2)=(z^(2*(prime-1))),1/(z^(3*(prime-1))))
         let frobs = &input.consts.extfieldparams.frobinus_consts;
-        let x = if let ExtFieldG2Element::Fp4_1(_x) = input.point.x { _x.content } 
-                                      else {    if let ExtFieldG2Element::Fp4_2(_x) = input.point.x { _x.content } 
-                                                else { panic!("error handeling unsupported type ...") }};
-        let y = if let ExtFieldG2Element::Fp4_1(_y) = input.point.y { _y.content } 
-                                      else {    if let ExtFieldG2Element::Fp4_2(_y) = input.point.y { _y.content } 
-                                                else { panic!("error handeling unsupported type ...") }};
-        let z = if let ExtFieldG2Element::Fp4_1(_z) = input.point.z { _z.content} 
-                                      else {     if let ExtFieldG2Element::Fp4_2(_z) = input.point.z { _z.content} 
-                                                 else { panic!("error handeling unsupported type ...") } };
-        let inconsts = if let ExtFieldG2Element::Fp4_1(_y) = input.point.y { _y.constants } 
-                                                     else {     if let ExtFieldG2Element::Fp4_2(_y) = input.point.y { _y.constants } 
-                                                                else { panic!("error handeling unsupported type ...") } };
-        let construction;
-        match input.point.x {
-            ExtFieldG2Element::Fp4_1(_) => {construction =1},
-            ExtFieldG2Element::Fp4_2(_) => {construction =2},
-            _ => {unimplemented!("error handeling unsupported type ...")},
-        }                                                                 
+        let (x, construction) = match input.point.x {
+            ExtFieldG2Element::Fp4_1(_x) => (_x.content, 1),
+            ExtFieldG2Element::Fp4_2(_x) => (_x.content, 2),
+            _ => panic!("error handeling unsupported type ...")
+        };
+        //let x = if let ExtFieldG2Element::Fp4_1(_x) = input.point.x { _x.content }
+        //                              else {    if let ExtFieldG2Element::Fp4_2(_x) = input.point.x { _x.content }
+        //                                        else { panic!("error handeling unsupported type ...") }};
+        let (y, inconsts) = match input.point.y {
+            ExtFieldG2Element::Fp4_1(_y) => (_y.content, _y.constants),
+            ExtFieldG2Element::Fp4_2(_y) => (_y.content, _y.constants),
+            _ => panic!("error handling unsupported type ...")
+        };
+        //let y = if let ExtFieldG2Element::Fp4_1(_y) = input.point.y { _y.content }
+        //                              else {    if let ExtFieldG2Element::Fp4_2(_y) = input.point.y { _y.content }
+        //                                        else { panic!("error handeling unsupported type ...") }};
+        let z = match input.point.z {
+            ExtFieldG2Element::Fp4_1(_z) => _z.content,
+            ExtFieldG2Element::Fp4_2(_z) => _z.content,
+            _ => panic!("error handling unsupported type ...")
+        };
+        //let z = if let ExtFieldG2Element::Fp4_1(_z) = input.point.z { _z.content}
+        //                              else {     if let ExtFieldG2Element::Fp4_2(_z) = input.point.z { _z.content}
+        //                                         else { panic!("error handeling unsupported type ...") } };
+        //let inconsts = if let ExtFieldG2Element::Fp4_1(_y) = input.point.y { _y.constants }
+        //                                             else {     if let ExtFieldG2Element::Fp4_2(_y) = input.point.y { _y.constants }
+        //                                                        else { panic!("error handeling unsupported type ...") } };
+        //let construction;
+        //match input.point.x {
+        //    ExtFieldG2Element::Fp4_1(_) => {construction =1},
+        //    ExtFieldG2Element::Fp4_2(_) => {construction =2},
+        //    _ => {unimplemented!("error handeling unsupported type ...")},
+        //}
         match order {   1 =>{   if construction ==1 {   let phix :[FieldElement<N>; 4];
                                                         let phiy :[FieldElement<N>; 4];
                                                         if input.consts.twist_type=='D'{  // D-Type Twiste
@@ -158,8 +173,7 @@ pub fn phi_bls24<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                              }
                         _ => {panic!("non-implemented order for EFp4 phi ...")}
                         }
-                    }    
-                
+                    }
 
 pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX_COEFS_COUNT: usize>
             (input :&G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT> , order: i8) -> G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT>
@@ -167,29 +181,56 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
     // Endomorphisme Phi^n((P))))=(u^n)*P (for n =1,4,8 and -1): Twist->Frobinus->Un-twist (in D-Type Mode for BLS48)   
     let frobs = &input.consts.extfieldparams.frobinus_consts;
     let fb_id= &input.consts.extfieldparams.fb_id;
-    let x = if let ExtFieldG2Element::Fp8_1(_x) = input.point.x { _x.content } 
-                                  else { if let ExtFieldG2Element::Fp8_2(_x) = input.point.x { _x.content } 
-                                         else {if let ExtFieldG2Element::Fp8_3(_x) = input.point.x { _x.content } 
-                                                 else {panic!("error handeling unsupported type ...")} } };
-    let y = if let ExtFieldG2Element::Fp8_1(_y) = input.point.y { _y.content } 
-                                  else { if let ExtFieldG2Element::Fp8_2(_y) = input.point.y { _y.content } 
-                                         else { if let ExtFieldG2Element::Fp8_3(_y) = input.point.y { _y.content } 
-                                                else {panic!("error handeling unsupported type ...")} } };
-    let z = if let ExtFieldG2Element::Fp8_1(_z) = input.point.z { _z.content} 
-                                  else { if let ExtFieldG2Element::Fp8_2(_z) = input.point.z { _z.content} 
-                                         else { if let ExtFieldG2Element::Fp8_3(_z) = input.point.z { _z.content } 
-                                                else {panic!("error handeling unsupported type ...")} }};
-    let inconsts = if let ExtFieldG2Element::Fp8_1(_y) = input.point.y { _y.constants } 
-                                                 else { if let ExtFieldG2Element::Fp8_2(_y) = input.point.y { _y.constants } 
-                                                        else { if let ExtFieldG2Element::Fp8_3(_y) = input.point.y { _y.constants } 
-                                                               else {panic!("error handeling unsupported type ...")} } };
-    let construction;
-    match input.point.x {
-        ExtFieldG2Element::Fp8_1(_) => {construction =1},
-        ExtFieldG2Element::Fp8_2(_) => {construction =2},
-        ExtFieldG2Element::Fp8_3(_) => {construction =3},
-        _ => {unimplemented!("error handeling unsupported type ...")},
-    }                                                        
+    let (x, construction) = match input.point.x {
+        ExtFieldG2Element::Fp8_1(_x) => (_x.content, 1),
+        ExtFieldG2Element::Fp8_2(_x) => (_x.content, 2),
+        ExtFieldG2Element::Fp8_3(_x) => (_x.content, 3),
+        _ => panic!("error handeling unsupported type ...")
+    };
+    //let x = if let ExtFieldG2Element::Fp8_1(_x) = input.point.x {
+    //    _x.content
+    //} else {
+    //    if let ExtFieldG2Element::Fp8_2(_x) = input.point.x {
+    //        _x.content
+    //    } else {
+    //        if let ExtFieldG2Element::Fp8_3(_x) = input.point.x {
+    //            _x.content
+    //        } else {
+    //            panic!("error handeling unsupported type ...")
+    //        }
+    //    }
+    //};
+    let (y, inconsts) = match input.point.y {
+        ExtFieldG2Element::Fp8_1(_y) => (_y.content, _y.constants),
+        ExtFieldG2Element::Fp8_2(_y) => (_y.content, _y.constants),
+        ExtFieldG2Element::Fp8_3(_y) => (_y.content, _y.constants),
+        _ => panic!("error handeling unsupported type ...")
+    };
+    //let y = if let ExtFieldG2Element::Fp8_1(_y) = input.point.y { _y.content }
+    //                              else { if let ExtFieldG2Element::Fp8_2(_y) = input.point.y { _y.content }
+    //                                     else { if let ExtFieldG2Element::Fp8_3(_y) = input.point.y { _y.content }
+    //                                            else {panic!("error handeling unsupported type ...")} } };
+    let z = match input.point.z {
+        ExtFieldG2Element::Fp8_1(_z) => _z.content,
+        ExtFieldG2Element::Fp8_2(_z) => _z.content,
+        ExtFieldG2Element::Fp8_3(_z) => _z.content,
+        _ => panic!("error handeling unsupported type ...")
+    };
+    //let z = if let ExtFieldG2Element::Fp8_1(_z) = input.point.z { _z.content}
+    //                              else { if let ExtFieldG2Element::Fp8_2(_z) = input.point.z { _z.content}
+    //                                     else { if let ExtFieldG2Element::Fp8_3(_z) = input.point.z { _z.content }
+    //                                            else {panic!("error handeling unsupported type ...")} }};
+    //let inconsts = if let ExtFieldG2Element::Fp8_1(_y) = input.point.y { _y.constants }
+    //                                             else { if let ExtFieldG2Element::Fp8_2(_y) = input.point.y { _y.constants }
+    //                                                    else { if let ExtFieldG2Element::Fp8_3(_y) = input.point.y { _y.constants }
+    //                                                           else {panic!("error handeling unsupported type ...")} } };
+    //let construction;
+    //match input.point.x {
+    //    ExtFieldG2Element::Fp8_1(_x) => {construction =1},
+    //    ExtFieldG2Element::Fp8_2(_x) => {construction =2},
+    //    ExtFieldG2Element::Fp8_3(_x) => {construction =3},
+    //    _ => {unimplemented!("error handeling unsupported type ...")},
+    //}
     match order {
         1 => {
             if construction == 1 {
