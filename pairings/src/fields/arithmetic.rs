@@ -544,31 +544,39 @@ pub fn invert <const N: usize> (a : &[u64; N],_params :&super::prime_fields::Fie
         }
     }
 
+fn montgomery_ladder<const N: usize>(a: &[u64; N], e: &[u64], mut result: [u64; N], _params: &super::prime_fields::FieldParams<N>) {
+    let mut r1 = a.clone();
+    for i in e.as_ref().iter().rev() {
+        for j in (0..64).rev() {
+            if (i >> j) & 1u64 == 0u64 {
+                r1 = mul(&result, &r1, _params);
+                result = sqr(&result, _params);
+            } else {
+                result = mul(&result, &r1, _params);
+                r1 = sqr(&r1,_params)
+            }
+        }
+    }
+}
+
+fn sqr_and_mul<const N: usize>(a: &[u64; N], e: &[u64], mut result: [u64; N], _params: &super::prime_fields::FieldParams<N>) {
+    for i in e.as_ref().iter().rev() {
+        for j in (0..64).rev() {
+            result = sqr(&result,_params);
+            if (i >> j) & 1u64 == 1u64 {
+                result = mul(&result, a,_params);
+            }
+        }
+    }
+}
+
 pub fn pow <const N: usize> (a : &[u64; N], e :&[u64], useladder:bool,_params :&super::prime_fields::FieldParams<N>)-> [u64; N] {
         // Implements montgomery Ladder (secure but relatively slow with respect to square and multiply)
-    let mut result = _params.one;
+    let result = _params.one;
     if useladder {
-        let mut r1 = a.clone();
-        for i in e.as_ref().iter().rev() {
-            for j in (0..64).rev() {
-                if (i >> j) & 1u64 == 0u64 {
-                    r1 = mul(&result, &r1, _params);
-                    result = sqr(&result, _params);
-                } else {
-                    result = mul(&result, &r1,_params);
-                    r1 = sqr(&r1,_params)
-                }
-            }
-        }
+        montgomery_ladder(&a, &e, result, &_params);
     } else {
-        for i in e.as_ref().iter().rev() {
-            for j in (0..64).rev() {
-                result = sqr(&result,_params);
-                if (i >> j) & 1u64 == 1u64 {
-                    result = mul(&result, a,_params);
-                }
-            }
-        }
+        sqr_and_mul(&a, &e, result, &_params);
     }
 
     result
