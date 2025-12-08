@@ -459,13 +459,15 @@ pub fn sqr <const N: usize> (a : &[u64; N],_params :&super::prime_fields::FieldP
     }
 
 pub fn invert <const N: usize> (a : &[u64; N],_params :&super::prime_fields::FieldParams<N>) -> [u64; N]
-        // Modular ivnertion of a modulo p. Implementation from "Efficient Software-Implementation of
+        // Modular inversion of a modulo p. Implementation from "Efficient Software-Implementation of
         // Finite Fields with Applications to Cryptography" - Algorithm 16. https://link.springer.com/article/10.1007/s10440-006-9046-1
     {   #[inline(always)]
         fn cmp <const N: usize> (a : &[u64; N], b : &[u64; N])-> i8
                 // Comparing tow integers based on [u64; N] representation. Proposed constant-time implementation
             {   let mut result:i16 = 0;
-                for (index, (ai,bi)) in a.iter().zip(b.iter()).enumerate() {result += (((ai > bi) as i16) - ((ai < bi) as i16)) << index;}
+                for (index, (ai,bi)) in a.iter().zip(b.iter()).enumerate() {
+                    result += (((ai > bi) as i16) - ((ai < bi) as i16)) << index;
+                }
                 result.signum() as i8
             }
         #[inline(always)]
@@ -542,32 +544,39 @@ pub fn invert <const N: usize> (a : &[u64; N],_params :&super::prime_fields::Fie
         }
     }
 
-pub fn pow <const N: usize> (a : &[u64; N], e :&[u64], useladder:bool,_params :&super::prime_fields::FieldParams<N>)-> [u64; N]
+pub fn pow <const N: usize> (a : &[u64; N], e :&[u64], useladder:bool,_params :&super::prime_fields::FieldParams<N>)-> [u64; N] {
         // Implements montgomery Ladder (secure but relatively slow with respect to square and multiply)
-    {   if useladder {  let mut r0 = _params.one;
-                        let mut r1 = a.clone();
-                        for i in e.as_ref().iter().rev() {
-                                for j in (0..64).rev()  {   if (i >> j) & 1u64 == 0u64 {  r1 = mul(&r0, &r1, _params);
-                                                                                         r0 = sqr(&r0, _params); }
-                                                            else {  r0 = mul(&r0, &r1,_params);
-                                                                    r1 = sqr(&r1,_params)}
-                                                        }
-                                                        }
-                        r0
-                        }
-        else {  let mut result = _params.one;
-                for i in e.as_ref().iter().rev()  {
-                            for j in (0..64).rev(){   result = sqr(&result,_params);
-                                                        if (i >> j) & 1u64 == 1u64 {result = mul(&result, a,_params);}
-                                                    }
-                                                    }
-                result
+    let mut result = _params.one;
+    if useladder {
+        let mut r1 = a.clone();
+        for i in e.as_ref().iter().rev() {
+            for j in (0..64).rev() {
+                if (i >> j) & 1u64 == 0u64 {
+                    r1 = mul(&result, &r1, _params);
+                    result = sqr(&result, _params);
+                } else {
+                    result = mul(&result, &r1,_params);
+                    r1 = sqr(&r1,_params)
+                }
             }
+        }
+    } else {
+        for i in e.as_ref().iter().rev() {
+            for j in (0..64).rev() {
+                result = sqr(&result,_params);
+                if (i >> j) & 1u64 == 1u64 {
+                    result = mul(&result, a,_params);
+                }
+            }
+        }
     }
+
+    result
+}
 
 fn tonelli_shanks<const N: usize>(a:&[u64; N],_params :&super::prime_fields::FieldParams<N>) -> Option<[u64; N]> {
     // Tonelli-Shanks Algorithm (p mod 4 ==1)
-    //  Adapted from  section 6 of 'Square roots from 1; 24, 51, 10 to Dan Shanks'  by Ezra Brown:
+    // Adapted from  section 6 of 'Square roots from 1; 24, 51, 10 to Dan Shanks' by Ezra Brown:
     // https://www.maa.org/sites/default/files/pdf/upload_library/22/Polya/07468342.di020786.02p0470a.pdf
     let w = pow(a,&_params.tonelli_params[1],false,_params);
     let mut y = mul(&a,&w,_params);

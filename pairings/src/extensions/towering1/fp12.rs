@@ -4,6 +4,7 @@
 
 use std::{fmt};
 use std::ops::Add;
+use crate::extensions::towering1::fp12::fp6::Fp6Element;
 use crate::tools::exponent::Exponent;
 use super::super::super::fields::prime_fields::{FieldElement, PrimeField};
 use super::super::ext_fields::{ExtElement, ExtField,ExFieldConsts};
@@ -40,7 +41,14 @@ pub mod fp6 {
 
         fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>)->  Fp6Field<PARAMSIZE,N>
             { Fp6Field {base_field : (*base_field).clone(), constants: consts}}
-        }       
+        }
+
+    fn get_fp6_res<const PARAMSIZE: usize, const N: usize>(this: &Fp6Element<PARAMSIZE, N>, x0: &Fp2Element<N>, x1: &Fp2Element<N>, x2: &Fp2Element<N>) -> Fp6Element<PARAMSIZE, N> {
+        Fp6Element {
+            content: [x0.content[0], x0.content[1], x1.content[0], x1.content[1], x2.content[0], x2.content[1]],
+            constants: this.constants
+        }
+    }
     
     impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,6,N> for Fp6Element<PARAMSIZE,N>{
         fn content_interface(&self) -> &[FieldElement<N>;6]
@@ -63,9 +71,9 @@ pub mod fp6 {
             let x0 = b0.addto(&c0).multiply(&b1.addto(&c1)).substract(&t1).substract(&t2).mul_by_u_p_1().addto(&t0);
             let x1 = a0.addto(&b0).multiply(&a1.addto(&b1)).substract(&t0).substract(&t1).addto(&t2.mul_by_u_p_1());
             let x2 = a0.addto(&c0).multiply(&a1.addto(&c1)).substract(&t0).substract(&t2).addto(&t1);
-            Self {content :[x0.content[0], x0.content[1], x1.content[0], x1.content[1], x2.content[0], x2.content[1]],
-                constants : self.constants  }
-            }
+
+            get_fp6_res(self, &x0, &x1, &x2)
+        }
     
         fn sqr(&self) -> Self {
             let a = Fp2Element{content :[self.content[0],self.content[1]]};
@@ -76,9 +84,9 @@ pub mod fp6 {
             let t2 = c.sqr();
             let x0 = c.addto(&b).sqr().substract(&t1).substract(&t2).mul_by_u_p_1().addto(&t0);
             let x1 = a.addto(&b).sqr().substract(&t0).substract(&t1).addto(&t2.mul_by_u_p_1());
-            let x2 = a.addto(&c).sqr().substract(&t0).substract(&t2).addto(&t1);                
-            Self {content :[x0.content[0], x0.content[1], x1.content[0], x1.content[1], x2.content[0], x2.content[1]], 
-                  constants : self.constants  }                                 
+            let x2 = a.addto(&c).sqr().substract(&t0).substract(&t2).addto(&t1);
+
+            get_fp6_res(self, &x0, &x1, &x2)
         }
 
 
@@ -99,8 +107,8 @@ pub mod fp6 {
             let x0 = t.multiply(&t0);
             let x1 = t.multiply(&t1); 
             let x2 = t.multiply(&t2);
-            Self {content :[x0.content[0], x0.content[1], x1.content[0], x1.content[1], x2.content[0], x2.content[1]], 
-                constants : self.constants  }   
+
+            get_fp6_res(self, &x0, &x1, &x2)
             }
     
         pub fn mul_by_u(&self) -> Self{
@@ -109,49 +117,48 @@ pub mod fp6 {
             }
 
         pub fn sparse_multiply(&self, rhs :&[&[FieldElement<N>];3], mode :u8) -> Self {  
-            match mode { 0 => {
-                                // rhs is sparse in Fp6 :(y0+y1*u)+(y2+y3*u)*v , (y4=y5=0)
-                                let a0 = Fp2Element{content :[self.content[0],self.content[1]]};
-                                let b0 = Fp2Element{content :[rhs[0][0],rhs[0][1]]};
-                                let t0 =a0.multiply(&b0);
-                                let a0 = Fp2Element{content :[self.content[2],self.content[3]]};
-                                let b0 = Fp2Element{content :[rhs[1][0],rhs[1][1]]};
-                                let t1 =a0.multiply(&b0);
-                                let a0 = Fp2Element{content :[self.content[2].addto(&self.content[4]),self.content[3].addto(&self.content[5])]};
-                                let c0 = a0.multiply(&b0).substract(&t1);
-                                let res0 = c0.mul_by_u_p_1().addto(&t0);
-                                let a0 = Fp2Element{content :[self.content[0].addto(&self.content[2]),self.content[1].addto(&self.content[3])]};
-                                let b0 = Fp2Element{content :[rhs[0][0].addto(&rhs[1][0]),rhs[0][1].addto(&rhs[1][1])]};
-                                let res1 =a0.multiply(&b0).substract(&t0).substract(&t1);
-                                let a0 = Fp2Element{content :[self.content[0].addto(&self.content[4]),self.content[1].addto(&self.content[5])]};
-                                let res2 = a0.multiply(&Fp2Element{content :[rhs[0][0],rhs[0][1]]}).substract(&t0).addto(&t1);
-                                Self {  content :[res0.content[0], res0.content[1], res1.content[0], res1.content[1], res2.content[0], res2.content[1]], 
-                                            constants : self.constants  }                                                                                                    
-                                    }
-                        1=> {
-                              // rhs is sparse in Fp6 : (y2+y3*u)*v , (y0=y1=y4=y5=0)
-                            let y2py3 = rhs[2][0].addto(&rhs[2][1]);
-                            let tmp = self.content[4].addto(&self.content[5]).multiply(&y2py3);
-                            let res0 = [self.content[4].multiply(&rhs[2][0]).double().substract(&tmp),
-                                                              tmp.substract(&self.content[5].multiply(&rhs[2][1]).double())];
-                             let t0 = self.content[0].multiply(&rhs[2][0]);
-                             let t1 = self.content[1].multiply(&rhs[2][1]);
-                             let res1 =[t0.substract(&t1), self.content[0].addto(&self.content[1]).multiply(&y2py3).substract(&t0).substract(&t1)];
-                             let t0 = self.content[2].multiply(&rhs[2][0]);
-                             let t1 = self.content[3].multiply(&rhs[2][1]);
-                             let res2 =[t0.substract(&t1), self.content[2].addto(&self.content[3]).multiply(&y2py3).substract(&t0).substract(&t1)];
-                             Self {  content :[res0[0], res0[1], res1[0], res1[1], res2[0], res2[1]], 
-                                constants : self.constants  }  
-                        }
-                        _=> {panic!("Not implemented sparse multiplication mode for Fp12")}
-            }
-                
-            }
-            
-        }
+            match mode {
+                0 => {
+                    // rhs is sparse in Fp6 :(y0+y1*u)+(y2+y3*u)*v , (y4=y5=0)
+                    let a0 = Fp2Element{content :[self.content[0],self.content[1]]};
+                    let b0 = Fp2Element{content :[rhs[0][0],rhs[0][1]]};
+                    let t0 =a0.multiply(&b0);
+                    let a0 = Fp2Element{content :[self.content[2],self.content[3]]};
+                    let b0 = Fp2Element{content :[rhs[1][0],rhs[1][1]]};
+                    let t1 =a0.multiply(&b0);
+                    let a0 = Fp2Element{content :[self.content[2].addto(&self.content[4]),self.content[3].addto(&self.content[5])]};
+                    let c0 = a0.multiply(&b0).substract(&t1);
+                    let res0 = c0.mul_by_u_p_1().addto(&t0);
+                    let a0 = Fp2Element{content :[self.content[0].addto(&self.content[2]),self.content[1].addto(&self.content[3])]};
+                    let b0 = Fp2Element{content :[rhs[0][0].addto(&rhs[1][0]),rhs[0][1].addto(&rhs[1][1])]};
+                    let res1 =a0.multiply(&b0).substract(&t0).substract(&t1);
+                    let a0 = Fp2Element{content :[self.content[0].addto(&self.content[4]),self.content[1].addto(&self.content[5])]};
+                    let res2 = a0.multiply(&Fp2Element{content :[rhs[0][0],rhs[0][1]]}).substract(&t0).addto(&t1);
 
-        
+                    get_fp6_res(self, &res0, &res1, &res2)
+                },
+                1 => {
+                    // rhs is sparse in Fp6 : (y2+y3*u)*v , (y0=y1=y4=y5=0)
+                    let y2py3 = rhs[2][0].addto(&rhs[2][1]);
+                    let tmp = self.content[4].addto(&self.content[5]).multiply(&y2py3);
+                    let res0 = [self.content[4].multiply(&rhs[2][0]).double().substract(&tmp),
+                        tmp.substract(&self.content[5].multiply(&rhs[2][1]).double())];
+                    let t0 = self.content[0].multiply(&rhs[2][0]);
+                    let t1 = self.content[1].multiply(&rhs[2][1]);
+                    let res1 = [t0.substract(&t1), self.content[0].addto(&self.content[1]).multiply(&y2py3).substract(&t0).substract(&t1)];
+                    let t0 = self.content[2].multiply(&rhs[2][0]);
+                    let t1 = self.content[3].multiply(&rhs[2][1]);
+                    let res2 = [t0.substract(&t1), self.content[2].addto(&self.content[3]).multiply(&y2py3).substract(&t0).substract(&t1)];
+
+                    Self {  content :[res0[0], res0[1], res1[0], res1[1], res2[0], res2[1]],
+                        constants : self.constants  }
+                },
+                _=> {panic!("Not implemented sparse multiplication mode for Fp12")}
+            }
+        }
     }
+}
+
 #[derive(Clone, Copy)]
 pub struct Fp12Element<const PARAMSIZE:usize,const N:usize>{
                                     pub content :[FieldElement<N>;12],
@@ -163,7 +170,7 @@ pub struct Fp12Field<const PARAMSIZE:usize,const N:usize> {
                                     constants :&'static ExFieldConsts<PARAMSIZE,N>
                                     }
 
-fn get_slice_fp6<const PARAMSIZE:usize,const N:usize>(element : &Fp12Element<PARAMSIZE,N>, i : usize) -> fp6::Fp6Element<PARAMSIZE,N>
+fn get_slice_fp6<const PARAMSIZE:usize,const N:usize>(element : &Fp12Element<PARAMSIZE,N>, i : usize) -> Fp6Element<PARAMSIZE,N>
     {       
         let _t: [FieldElement<N>; 6] = element.content[i*6..(i+1)*6].iter()
         .map(|&element1| FieldElement {fieldparams: element1.fieldparams,
@@ -171,7 +178,7 @@ fn get_slice_fp6<const PARAMSIZE:usize,const N:usize>(element : &Fp12Element<PAR
                                                       })
         .collect::<Vec<_>>()
         .try_into().unwrap(); 
-            fp6::Fp6Element{content :_t, constants :None}        
+        Fp6Element{content :_t, constants :None}
     }
 
 
@@ -186,9 +193,21 @@ impl<const PARAMSIZE:usize,const N: usize> ExtField<PARAMSIZE,12,N> for Fp12Fiel
         Some(self.constants)
     }
 
-    fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>)->  Fp12Field<PARAMSIZE,N>
-        { Fp12Field {base_field : (*base_field).clone(), constants: consts.unwrap()}}
+    fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>)-> Fp12Field<PARAMSIZE,N> {
+        Fp12Field {
+            base_field : (*base_field).clone(),
+            constants: consts.unwrap()
+        }
     }
+}
+
+fn get_fp_12_element<const PARAMSIZE: usize, const N: usize>(this: &Fp12Element<PARAMSIZE, N>, x0: &Fp6Element<PARAMSIZE, N>,
+                                                             x1: &Fp6Element<PARAMSIZE, N>) -> Fp12Element<PARAMSIZE,N> {
+    Fp12Element {
+        content: [x0.content[0], x0.content[1],x0.content[2],x0.content[3],x0.content[4],x0.content[5],
+            x1.content[0], x1.content[1],x1.content[2],x1.content[3],x1.content[4],x1.content[5]],
+        constants: this.constants}
+}
 
 impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,12,N> for Fp12Element<PARAMSIZE,N>{
     fn content_interface(&self) -> &[FieldElement<N>;12]
@@ -208,9 +227,8 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,12,N> for Fp12El
         let t3 = a0.addto(&b0).multiply(&a1.addto(&b1));
         let x0 = t1.mul_by_u().addto(&t0);
         let x1 = t3.substract(&t0).substract(&t1);
-        Self {  content : [x0.content[0], x0.content[1],x0.content[2],x0.content[3],x0.content[4],x0.content[5],
-                           x1.content[0], x1.content[1],x1.content[2],x1.content[3],x1.content[4],x1.content[5]],
-                constants : self.constants}
+
+        get_fp_12_element(self, &x0, &x1)
     }
     
     fn sqr(&self) -> Self {
@@ -221,9 +239,8 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,12,N> for Fp12El
         let t2 = a.addto(&b).sqr();              
         let x0 = t1.mul_by_u().addto(&t0);
         let x1 = t2.substract(&t0).substract(&t1);
-        Self {  content : [x0.content[0], x0.content[1],x0.content[2],x0.content[3],x0.content[4],x0.content[5],
-                           x1.content[0], x1.content[1],x1.content[2],x1.content[3],x1.content[4],x1.content[5]],
-                constants : self.constants}                                                                                                                                                    
+
+        get_fp_12_element(self, &x0, &x1)
     }
 
     fn new(content :&[FieldElement<N>; 12], consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp12Element<PARAMSIZE,N>
@@ -293,9 +310,8 @@ impl <const PARAMSIZE:usize,const N:usize> Fp12Element <PARAMSIZE,N>{
         let t = a.sqr().substract(&b.sqr().mul_by_u()).invert();
         let x0 = a.multiply(&t);
         let x1 = b.negate().multiply(&t);
-        Self {  content : [x0.content[0], x0.content[1],x0.content[2],x0.content[3],x0.content[4],x0.content[5],
-                           x1.content[0], x1.content[1],x1.content[2],x1.content[3],x1.content[4],x1.content[5]],
-                constants : self.constants}  
+
+        get_fp_12_element(self, &x0, &x1)
     }
     
     pub fn unisqr(&self) -> Self { 
@@ -338,7 +354,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp12Element <PARAMSIZE,N>{
                                         { let limbnum= e.get_len();
                                           for i in array[0..limbnum].as_ref().iter().rev()  {
                                                     for j in (0..64).rev(){ result = result.unisqr();                
-                                                                                 if (i >> j) & 1 == 1 {  result = result.multiply(&self);}                
+                                                                                 if (i >> j) & 1u64 == 1u64 {  result = result.multiply(&self);}
                                                                                  }
                                                                             }                                                        
                                         }                                                                      

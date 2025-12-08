@@ -55,8 +55,11 @@ pub struct G1Field<const R:usize,const N:usize,const MAX_COEFS_COUNT:usize>
     pub fr_field :  &'static PrimeField<R>,
 }
 
-impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX_COEFS_COUNT>
-        {   
+const TABLESIZE: usize = 1 << (WDSIZE - 1);
+const BLOCKSIZE: usize = 1 << (WSIZE - 1);
+
+impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX_COEFS_COUNT> {
+
             pub fn addto(&self, other: &G1Element<R,N,MAX_COEFS_COUNT>) -> G1Element<R,N,MAX_COEFS_COUNT>
             {
                 G1Element { point :self.point.add_jacobian(&other.point),
@@ -88,6 +91,20 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
             {
                 self.point.equal(&other.point)
             }
+
+            fn get_g1_element(&self, lookup: &[EcPoint<FieldElement<N>>; TABLESIZE >> 1], idx: usize, fi: u8) -> G1Element<R,N,MAX_COEFS_COUNT> {
+                let res = G1Element {
+                    point: lookup[idx],
+                    consts: self.consts
+                };
+
+                if fi == 0 {
+                    res
+                } else {
+                    res.phi().negate()
+                }
+            }
+
             pub fn  glv_multiply(&self, scalar : &FieldElement<R>) -> G1Element<R,N,MAX_COEFS_COUNT>
             {   let s = scalar.to_big_uint();
                 if s.bits()<(scalar.fieldparams.num_of_bits /2).try_into().unwrap() {self.multiply(&scalar)}
@@ -95,9 +112,9 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                         let ff: BigUint = BigUint::from_str("255").unwrap();
                         let mut _2phi   = EcPoint{x: _2p.x.multiply(&self.consts.w), y: _2p.y, z: _2p.z.clone() };
                         let infinit = EcPoint {x:self.point.x.one(), y : self.point.x.one(), z: self.point.x.zero() };                
-                        const TABLESIZE :usize = 1 << (WDSIZE - 1);
-                        const BLOCKSIZE :usize = 1 << (WSIZE - 1);
-                        let mut lookup = [infinit;TABLESIZE >> 1];    
+                        //const TABLESIZE :usize = 1 << (WDSIZE - 1);
+                        //const BLOCKSIZE :usize = 1 << (WSIZE - 1);
+                        let mut lookup = [infinit;TABLESIZE >> 1];
                         lookup[0] = EcPoint {   x: self.point.x.multiply(&self.consts.w.addto(&self.point.x.one())).negate(),
                                                 y: self.point.y.negate(),
                                                 z: self.point.z.clone()};
@@ -113,8 +130,7 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                         let mut fi   = limb & 1;
                         let mut sig : i8  = (limb & 2) as i8 - 1;
                         let mut idx = ((limb & WDMASK) >> 2) as usize;
-                        let mut result =  if fi == 0 { G1Element {point :lookup[idx], consts : self.consts}} 
-                                                                            else { G1Element {point :lookup[idx], consts : self.consts}.phi().negate()};
+                        let mut result = self.get_g1_element(&lookup, idx, fi);
                         if sig == -1 {result.point =  result.point.negate()};                                                
                         code = code >> WDSIZE;
                         while code != BigUint::one() {  limb = (&code).bitand(ff.clone()).to_u8().unwrap();
@@ -124,8 +140,7 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                                                         result.point = result.point.double_jacobian(); 
                                                         result.point = result.point.double_jacobian(); 
                                                         result.point = result.point.double_jacobian(); 
-                                                        let tmp =  if fi == 0 { G1Element {point :lookup[idx], consts : self.consts}} 
-                                                                                                    else { G1Element {point :lookup[idx], consts : self.consts}.phi().negate()};
+                                                        let tmp =  self.get_g1_element(&lookup, idx, fi);
                                                         result.point = if sig ==1 {result.point.add_jacobian(&tmp.point)}
                                                                     else {result.point.add_jacobian(&tmp.point.negate())};
                                                         code = code >> WDSIZE;
@@ -167,8 +182,9 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                 let mut p = self.point.clone();
                 p.to_affine();
                 let c_bit: u8 = 1;
-                let i_bit: u8 = if self.point.z.is_zero() {1} else {0};
-                let s_bit: i8 = if self.point.z.is_zero() {0} else {if self.point.y.sign()==1 {1} else {0}};                
+                //let i_bit: u8 = if self.point.z.is_zero() {1} else {0};
+                let (i_bit, s_bit): (u8, i8) = if self.point.z.is_zero() {(1, 0)} else {(0, if self.point.y.sign()==1 {1} else {0})};
+                //let s_bit: i8 = if self.point.z.is_zero() {0} else {if self.point.y.sign()==1 {1} else {0}};
                 let m_byte: u8 = (c_bit << 7) | (i_bit << 6) | (((s_bit + 1) as u8 >> 1) << 5);
                 let numbits = self.point.x.fieldparams.num_of_bits;                
                 let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};
@@ -182,7 +198,7 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
             {   
                 if ! self.point.z.is_one() {    let mut tmp = self.point.clone();
                                                 tmp.to_affine();
-                                                G1Element { point :tmp, consts :self.consts }  
+                                                G1Element { point :tmp, consts :self.consts }
                                             }    
                 else {self.clone()}
             }

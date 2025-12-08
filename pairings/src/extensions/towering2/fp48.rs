@@ -636,7 +636,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp48Element <PARAMSIZE,N>{
                                         { let limbnum= e.get_len();
                                           for i in array[0..limbnum].as_ref().iter().rev()  {
                                                     for j in (0..64).rev(){ result = result.unisqr();                
-                                                                                 if (i >> j) & 1 == 1 { result = result.multiply(&self);}                
+                                                                                 if (i >> j) & 1u64 == 1u64 { result = result.multiply(&self);}
                                                                                  }
                                                                             }                                                        
                                         }                                                                      

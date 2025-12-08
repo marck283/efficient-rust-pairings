@@ -113,7 +113,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp2Element<PARAMSIZE, N>{
             else { if a.unwrap().equal(&FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}) 
                             {  Some(zero) }
                    else {Some(Self{content:[a.unwrap(),
-                                            self.content[1].multiply(&(a.unwrap().addto(&a.unwrap())).invert())],
+                                            self.content[1].multiply(&a.unwrap().addto(&a.unwrap()).invert())],
                                    constants :self.constants 
                                   }
                              )

@@ -13,7 +13,7 @@ use crate::tools::arithmetic_interface::ArithmeticOperations;
 use super::paramlist::CurveParams;
 use crate::{extensions::ext_fields::ExFieldConsts, fields::prime_fields::PrimeField};
 
-pub fn build_field_params<'a ,const NUMLIMBS:usize>(inputfield : &str) -> FieldParams<NUMLIMBS>
+pub fn build_field_params<'a, const NUMLIMBS:usize>(inputfield : &str) -> FieldParams<NUMLIMBS>
             {   
                 fn mod_inverse(a: &BigInt, m: &BigInt) -> Option<BigInt> {  // Extended Euclidean Algorithm for finding modular inverse
                     let (mut old_r, mut r) = (a.clone(), m.clone());
@@ -104,8 +104,8 @@ pub fn build_field_params<'a ,const NUMLIMBS:usize>(inputfield : &str) -> FieldP
                             }
             }
 
-pub fn build_frob_params<'a ,const NUMLIMBS:usize,const NUMFROBCONSTS :usize, const MAX_ISO_COEFS_G1:usize ,const G2_ORDER:usize,const MAX_ISO_COEFS_G2:usize>
-        (input : CurveParams<'a ,NUMFROBCONSTS, MAX_ISO_COEFS_G1 ,G2_ORDER, MAX_ISO_COEFS_G2>,field:&PrimeField<NUMLIMBS>) -> ExFieldConsts<NUMFROBCONSTS,NUMLIMBS>
+pub fn build_frob_params<const NUMLIMBS: usize, const NUMFROBCONSTS: usize, const MAX_ISO_COEFS_G1: usize, const G2_ORDER: usize, const MAX_ISO_COEFS_G2: usize>
+        (input : CurveParams<NUMFROBCONSTS, MAX_ISO_COEFS_G1, G2_ORDER, MAX_ISO_COEFS_G2>, field:&PrimeField<NUMLIMBS>) -> ExFieldConsts<NUMFROBCONSTS, NUMLIMBS>
 {    
     let mut result =[field.from_str("0");NUMFROBCONSTS];
     for i in 0..NUMFROBCONSTS  { result[i] =field.from_hex_str(&input.frob_consts[i]); }

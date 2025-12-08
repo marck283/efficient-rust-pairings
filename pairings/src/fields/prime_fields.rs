@@ -66,7 +66,7 @@ impl <'a, const N:usize> PrimeField<N> {
             let mut random_bytes = vec![0u8; N * 8]; 
             rng.fill_bytes(&mut random_bytes);
             let randomelement  = BigUint::from_bytes_be(&random_bytes); 
-            Self::from_bigint(&self,&((randomelement % self.modulo_as_bigint.clone()).to_bigint()).unwrap())
+            Self::from_bigint(&self,&(randomelement % self.modulo_as_bigint.clone()).to_bigint().unwrap())
         }
 
     pub fn from_bigint(&self, input : &BigInt)-> FieldElement<N> 
@@ -281,8 +281,8 @@ impl <const N:usize> ArithmeticOperations for FieldElement<N> {
     }
     
     impl  <'a, const N:usize> Sub for FieldElement<N> {
-    type Output =  FieldElement<N>;
-    fn sub(self, rhs: Self) -> Self::Output {
+        type Output =  FieldElement<N>;
+        fn sub(self, rhs: Self) -> Self::Output {
         self.substract(&rhs)
     }
     }
@@ -336,7 +336,7 @@ impl <const N:usize> ArithmeticOperations for FieldElement<N> {
                         2 => rhs + rhs,
                         3 => rhs + rhs + rhs,
                         4 =>{let double =rhs + rhs;
-                            double + double},      
+                            double + double},
                         5 =>{let double =rhs + rhs;
                             let fourth =double+double;
                             fourth + rhs },
@@ -366,15 +366,15 @@ impl <const N:usize> ArithmeticOperations for FieldElement<N> {
     impl<'a, const N: usize> Eq for FieldElement<N> {}
     
     impl  <'a, const N:usize> Neg for FieldElement<N> {
-    type Output =  FieldElement<N>;
-    fn neg(self) -> Self::Output {
+        type Output =  FieldElement<N>;
+        fn neg(self) -> Self::Output {
         self.negate()
     }
     }   
     
     impl<'a, const N: usize> fmt::Display for FieldElement<N> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:}", &self.to_dec_string())
-    }
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{:}", &self.to_dec_string())
+        }
     }
    

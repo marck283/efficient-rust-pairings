@@ -160,12 +160,12 @@ impl <const PARAMSIZE:usize,const N:usize> Fp8Element <PARAMSIZE,N>{
                                                             }
                                             }
                            }
-            if r.is_none() { None } //Never occure ...
+            if r.is_none() { None } //Never occurs ...
             else { if r.unwrap().equal(&Fp4Element{content :[FieldElement{mont_limbs:outparams.zero,fieldparams:outparams};4],
                                                    constants : self.constants }) 
                             {  Some(zero) }
                    else {   let r= r.unwrap();
-                            let t = b.multiply(&(r.addto(&r)).invert());
+                            let t = b.multiply(&r.addto(&r).invert());
                             Some(Self{content:[ r.content[0], r.content[1], r.content[2], r.content[3],
                                                 t.content[0], t.content[1], t.content[2], t.content[3],
                                                ],
@@ -184,37 +184,44 @@ impl <const PARAMSIZE:usize,const N:usize> Fp8Element <PARAMSIZE,N>{
                         constants : self.constants}
 
         }
+
+    fn get_r(&self, _x: &Fp2Element<N>, y0py2: &FieldElement<N>, y1py3: &FieldElement<N>, ally: &FieldElement<N>,
+             t0: &Fp2Element<N>, t1: &Fp2Element<N>) -> Fp2Element<N> {
+        let x = [_x.content[0].addto(&_x.content[1]),_x.content[0].multiply(&y0py2),_x.content[1].multiply(&y1py3)];
+
+        Fp2Element {
+            content: [x[1].substract(&x[2]),
+                x[0].multiply(&ally).substract(&x[1]).substract(&x[2])]
+        }.substract(&t0).substract(&t1)
+    }
     
     pub fn sparse_multiply(&self, rhs:&[FieldElement<N>]) -> Self {                
-                let y0py2 = rhs[0].addto(&rhs[2]);
-                let y1py3 = rhs[1].addto(&rhs[3]);
-                let ally = y1py3.addto(&y0py2);
-                let a0 = Fp2Element{ content : [ self.content[0],self.content[1]]} ;
-                let a1 = Fp2Element{ content : [ self.content[2],self.content[3]]} ;
-                let a2 = Fp2Element{ content : [ self.content[4],self.content[5]]} ;
-                let a3 = Fp2Element{ content : [ self.content[6],self.content[7]]} ;
-                let b0 = Fp2Element{ content : [ rhs[0],rhs[1]]} ;
-                let b1 = Fp2Element{ content : [ rhs[2],rhs[3]]} ;
-                let t0 = a0.multiply(&b0);
-                
-                let t1 = a1.multiply(&b1);
-                let r0 = t0.addto(&t1.mul_by_u_p_1());
-                let _x = a0.addto(&a1);
-                let x = [_x.content[0].addto(&_x.content[1]),_x.content[0].multiply(&y0py2),_x.content[1].multiply(&y1py3)];
-                let r1 = Fp2Element{ content : [x[1].substract(&x[2]) ,x[0].multiply(&ally).substract(&x[1]).substract(&x[2])]}
-                                        .substract(&t0).substract(&t1) ;
-                let t0 = a2.multiply(&b0);
-                let t1 = a3.multiply(&b1);   
-                let r2 = t0.addto(&t1.mul_by_u_p_1());            
-                let _x = a2.addto(&a3);
-                let x = [_x.content[0].addto(&_x.content[1]),_x.content[0].multiply(&y0py2),_x.content[1].multiply(&y1py3)];
-                let r3 = Fp2Element{ content : [x[1].substract(&x[2]) ,x[0].multiply(&ally).substract(&x[1]).substract(&x[2])]}
-                                        .substract(&t0).substract(&t1) ;                 
-                Self {  content : [ r0.content[0], r0.content[1], r1.content[0], r1.content[1],
-                                    r2.content[0], r2.content[1], r3.content[0], r3.content[1]],
-                        constants : self.constants }  
-            }
+        let y0py2 = rhs[0].addto(&rhs[2]);
+        let y1py3 = rhs[1].addto(&rhs[3]);
+        let ally = y1py3.addto(&y0py2);
+        let a0 = Fp2Element{ content : [ self.content[0],self.content[1]]};
+        let a1 = Fp2Element{ content : [ self.content[2],self.content[3]]};
+        let a2 = Fp2Element{ content : [ self.content[4],self.content[5]]};
+        let a3 = Fp2Element{ content : [ self.content[6],self.content[7]]};
+        let b0 = Fp2Element{ content : [ rhs[0],rhs[1]]};
+        let b1 = Fp2Element{ content : [ rhs[2],rhs[3]]};
+
+        let t0 = a0.multiply(&b0);
+        let t1 = a1.multiply(&b1);
+        let r0 = t0.addto(&t1.mul_by_u_p_1());
+        let _x = a0.addto(&a1);
+        let r1 = self.get_r(&_x, &y0py2, &y1py3, &ally, &t0, &t1);
+
+        let t0 = a2.multiply(&b0);
+        let t1 = a3.multiply(&b1);
+        let r2 = t0.addto(&t1.mul_by_u_p_1());
+        let _x = a2.addto(&a3);
+        let r3 = self.get_r(&_x, &y0py2, &y1py3, &ally, &t0, &t1);
+        Self {  content : [ r0.content[0], r0.content[1], r1.content[0], r1.content[1],
+            r2.content[0], r2.content[1], r3.content[0], r3.content[1]],
+            constants : self.constants }
     }
+}
     
 
 

@@ -180,7 +180,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp8Element <PARAMSIZE,N>{
                                                    constants : self.constants }) 
                             {  Some(zero) }
                    else {   let r= r.unwrap();
-                            let t = b.multiply(&(r.addto(&r)).invert());
+                            let t = b.multiply(&r.addto(&r).invert());
                             Some(Self{content:[ r.content[0], r.content[1], r.content[2], r.content[3],
                                                 t.content[0], t.content[1], t.content[2], t.content[3],
                                                ],
@@ -210,11 +210,11 @@ impl <const PARAMSIZE:usize,const N:usize> Fp8Element <PARAMSIZE,N>{
                 let t0 = a0.multiply(&b0);
                 let t1 = a1.multiply(&b1);
                 let r0 = t0.addto(&t1.mul_by_u());
-                let r1 =a0.addto(&a1).multiply(&b0.addto(&b1)).substract(&t0).substract(&t1) ;                                      
+                let r1 = a0.addto(&a1).multiply(&b0.addto(&b1)).substract(&t0).substract(&t1) ;
                 let t0 = a2.multiply(&b0);
                 let t1 = a3.multiply(&b1);   
                 let r2 = t0.addto(&t1.mul_by_u());            
-                let r3 =a2.addto(&a3).multiply(&b0.addto(&b1)).substract(&t0).substract(&t1) ;                                                                                           
+                let r3 = a2.addto(&a3).multiply(&b0.addto(&b1)).substract(&t0).substract(&t1) ;
                 Self {  content : [ r0.content[0], r0.content[1], r1.content[0], r1.content[1],
                                     r2.content[0], r2.content[1], r3.content[0], r3.content[1]],
                         constants : self.constants }  

@@ -212,23 +212,34 @@ pub trait ExtElement<const PARAMSIZE:usize,const ORDER :usize, const N:usize>{
                 Self::new( &result, self.constants_interface())
             }
             
-    fn pow(&self,e :& dyn Exponent<N>)-> Self where Self :Sized 
-            {   let _a = self.content_interface();
-                let out_params=  _a[0].fieldparams;
-                let one = FieldElement{mont_limbs:out_params.one,fieldparams:_a[0].fieldparams};
-                let zero = FieldElement{mont_limbs:[0;N],fieldparams:_a[0].fieldparams};
-                let mut result: [FieldElement<N>; ORDER] =[zero;ORDER] ;
-                result [0] = one;   
-                let mut result = Self::new(&result,self.constants_interface());                            
-                if let Some(array) = e.to_u64_array() {   let limbnum= e.get_len();
-                                                                    for i in array[0..limbnum].as_ref().iter().rev()  {
-                                                                        for j in (0..64).rev(){ result = result.sqr();                
-                                                                                                     if (i >> j) & 1 == 1 { result = result.multiply(&self);}                
-                                                                                                   }
-                                                                                            }                                                        
-                                                                }                                                                 
-                result
+    fn pow(&self,e :& dyn Exponent<N>)-> Self where Self: Sized {
+        let _a = self.content_interface();
+        let out_params= _a[0].fieldparams;
+        let one = FieldElement {
+            mont_limbs: out_params.one,
+            fieldparams: out_params
+        };
+        let zero = FieldElement {
+            mont_limbs: [0; N],
+            fieldparams: out_params
+        };
+
+        let mut result: [FieldElement<N>; ORDER] = [zero; ORDER];
+        result [0] = one;
+        let mut result = Self::new(&result, self.constants_interface());
+        if let Some(array) = e.to_u64_array() {
+            let limbnum= e.get_len();
+            for i in array[0..limbnum].as_ref().iter().rev() {
+                for j in (0..64).rev() {
+                    result = result.sqr();
+                    if (i >> j) & 1u64 == 1u64 {
+                        result = result.multiply(&self);
+                    }
+                }
             }
+        }
+        result
+    }
     
     fn to_a_string(&self) -> String
             {  let mut out= String::new();
