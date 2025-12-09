@@ -131,7 +131,9 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                         let mut sig : i8  = (limb & 2) as i8 - 1;
                         let mut idx = ((limb & WDMASK) >> 2) as usize;
                         let mut result = self.get_g1_element(&lookup, idx, fi);
-                        if sig == -1 {result.point =  result.point.negate()};                                                
+                        if sig == -1 {
+                            result.point = result.point.negate()
+                        }
                         code = code >> WDSIZE;
                         while code != BigUint::one() {  limb = (&code).bitand(ff.clone()).to_u8().unwrap();
                                                         fi   = limb & 1; 
@@ -141,12 +143,22 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                                                         result.point = result.point.double_jacobian(); 
                                                         result.point = result.point.double_jacobian(); 
                                                         let tmp =  self.get_g1_element(&lookup, idx, fi);
-                                                        result.point = if sig ==1 {result.point.add_jacobian(&tmp.point)}
-                                                                    else {result.point.add_jacobian(&tmp.point.negate())};
+                                                        result.point = if sig == 1 {
+                                                            result.point.add_jacobian(&tmp.point)
+                                                        } else {
+                                                            result.point.add_jacobian(&tmp.point.negate())
+                                                        };
                                                         code = code >> WDSIZE;
                                                     }           
-                        if alpha.is_zero() { G1Element {point : result.point.negate(), consts:self.consts}}
-                        else {result}}
+                        if alpha.is_zero() {
+                            G1Element {
+                                point: result.point.negate(),
+                                consts: self.consts
+                            }
+                        } else {
+                            result
+                        }
+                }
             }
 
             pub fn phi(&self) -> G1Element<R,N,MAX_COEFS_COUNT>
@@ -171,7 +183,7 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
             {
                 self.point.to_hex_string()
             } 
-            pub fn encode_to_base64(&self) ->String
+            pub fn encode_to_base64(&self) -> String
             {   
                 general_purpose::STANDARD.encode(self.to_compressed_bytearray())
             }
@@ -185,8 +197,9 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                 //let i_bit: u8 = if self.point.z.is_zero() {1} else {0};
                 let (i_bit, s_bit): (u8, i8) = if self.point.z.is_zero() {(1, 0)} else {(0, if self.point.y.sign()==1 {1} else {0})};
                 //let s_bit: i8 = if self.point.z.is_zero() {0} else {if self.point.y.sign()==1 {1} else {0}};
-                let m_byte: u8 = (c_bit << 7) | (i_bit << 6) | (((s_bit + 1) as u8 >> 1) << 5);
-                let numbits = self.point.x.fieldparams.num_of_bits;                
+                //let m_byte: u8 = (c_bit << 7) | (i_bit << 6) | (((s_bit + 1) as u8 >> 1) << 5);
+                let m_byte: u8 = (c_bit << 7) | (i_bit << 6) | (((s_bit + 1) as u8) << 4);
+                let numbits = self.point.x.fieldparams.num_of_bits;
                 let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};
                 let mut x_string = if self.point.z.is_zero() {i2osp(0, sizeinbytes)}
                                             else {i2osp_pf(&p.x, sizeinbytes)};
@@ -198,7 +211,7 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
             {   
                 if ! self.point.z.is_one() {    let mut tmp = self.point.clone();
                                                 tmp.to_affine();
-                                                G1Element { point :tmp, consts :self.consts }
+                                                G1Element { point: tmp, consts: self.consts }
                                             }    
                 else {self.clone()}
             }
@@ -212,28 +225,45 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
             //     https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-05#section-6.6.3
             //     https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-05#appendix-C.2            
             let mut u = self.base_field.random_element();
-            if !seed.is_zero() {u=seed};            
+            if !seed.is_zero() {
+                u = seed
+            }
             let t1 = self.consts.swu_consts.z.multiply(&u.sqr());
             let mut t2 = t1.sqr();
             let mut x1 = t1.addto(&t2).invert();
-            if x1.is_zero() {x1 = self.consts.swu_consts.inv_z.clone() }
-            else {x1 = x1.addto(&self.base_field.one())}
+            if x1.is_zero() {
+                x1 = self.consts.swu_consts.inv_z.clone()
+            } else {
+                x1 = x1.addto(&self.base_field.one())
+            }
             x1 = x1.multiply(&self.consts.swu_consts.b_div_a);            
             let gx1 = x1.sqr().addto(&self.consts.swu_consts.swu_a).multiply(&x1).addto(&self.consts.swu_consts.swu_b);
             let ty = gx1.sqrt();
             let mut x: FieldElement<N>;
             let mut y: FieldElement<N>;
-            if !ty.is_none() {  y = ty.unwrap();
-                                if u.sign()!= ty.unwrap().sign() { y = y.negate()}
-                                x = x1.clone();  
-                            }
-            else { let x2 = t1.multiply(&x1);
-                   t2 = t2.multiply(&t1);                   
-                   let gx2 = gx1.multiply(&t2);                 
-                   y  = gx2.sqrt().unwrap();
-                   if u.sign() != y.sign() {  y = y.negate();} 
-                   x = x2.clone(); 
+
+            x = match ty {
+                Some(ty) => {
+                    y = ty;
+                    if u.sign() != ty.sign() {
+                        y = y.negate()
+                    }
+
+                    x1.clone()
+                },
+                None => {
+                    let x2 = t1.multiply(&x1);
+                    t2 = t2.multiply(&t1);
+                    let gx2 = gx1.multiply(&t2);
+                    y  = gx2.sqrt().unwrap();
+                    if u.sign() != y.sign() {
+                        y = y.negate();
+                    }
+
+                    x2.clone()
                 }
+            };
+            
             let mut pow = x.clone();
             let mut xnum = self.consts.swu_consts.xnum[0];
             let mut xden = self.consts.swu_consts.xden[0];
@@ -242,19 +272,22 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
             for i in 1..MAX_COEFS_COUNT {
                 ynum = ynum.addto(&self.consts.swu_consts.ynum[i].multiply(&pow));
                 yden = yden.addto(&self.consts.swu_consts.yden[i].multiply(&pow));
-                if !self.consts.swu_consts.xnum[i].is_zero() {  xnum = xnum.addto(&self.consts.swu_consts.xnum[i].multiply(&pow))};
-                if !self.consts.swu_consts.xden[i].is_zero() {  xden = xden.addto(&self.consts.swu_consts.xden[i].multiply(&pow))};
+                if !self.consts.swu_consts.xnum[i].is_zero() {
+                    xnum = xnum.addto(&self.consts.swu_consts.xnum[i].multiply(&pow))
+                }
+                if !self.consts.swu_consts.xden[i].is_zero() {
+                    xden = xden.addto(&self.consts.swu_consts.xden[i].multiply(&pow))
+                }
                 pow = pow.multiply(&x);                                                                                    
             }             
             // Convert from projective coordinates to Jacobian coordinates
             let z = xden.multiply(&yden);
             x = xnum.multiply(&z).multiply(&yden);
             y = ynum.multiply(&z.sqr()).multiply(&xden).multiply(&y);
-            G1Element { point : EcPoint { x ,y ,z },
-                        consts :self.consts,
-                      }
 
+            self.get_g1_element(&x, &y, &z, self.consts)
         }
+
         pub fn map_to_curve(&self,seed1 : FieldElement<N>) ->G1Element<R,N,MAX_COEFS_COUNT> 
         {  
              self.random_point_using_swu(seed1)
@@ -272,73 +305,98 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
                 rp = rp.multiply_by_const(self.consts.h1 as i128);                
                 rp.to_affine()    
             }
-        pub fn hash_to_field(&self,id :&str,mode :u8) -> G1Element<R,N,MAX_COEFS_COUNT>
-            {   
-                //  mode=0: Encode to Curve (NU-encode-to-curve), mode=1: Random Oracle model (RO-hash-to-curve)
-                //  https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-06#name-roadmap
-                let hashs = self.base_field.hash_to_field(id,self.consts.security_level, 2);
-                if mode ==0 {self.random_point_withseed(hashs[0]).to_affine()}   
-                else {  let p1=self.random_point_withseed(hashs[0]);
-                        let p2=self.random_point_withseed(hashs[1]);
-                        p1.addto(&p2).to_affine()                        
-                     } 
+        pub fn hash_to_field(&self,id :&str,mode :u8) -> G1Element<R,N,MAX_COEFS_COUNT> {
+            //  mode=0: Encode to Curve (NU-encode-to-curve), mode=1: Random Oracle model (RO-hash-to-curve)
+            //  https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-06#name-roadmap
+            let hashs = self.base_field.hash_to_field(id,self.consts.security_level, 2);
+            if mode ==0 {self.random_point_withseed(hashs[0]).to_affine()
+            } else {
+                let p1=self.random_point_withseed(hashs[0]);
+                let p2=self.random_point_withseed(hashs[1]);
+                p1.addto(&p2).to_affine()
             }
+        }
         
-        pub fn from_bytearray(&self,inbytes : &Vec<u8>) -> G1Element<R,N,MAX_COEFS_COUNT>
-            {
-                //  Point de-compression/de-Serialization as described by ZCach serialization format
-                //  https://www.ietf.org/archive/id/draft-irtf-cfrg-pairing-friendly-curves-11.html#name-zcash-serialization-format-
-                let mut input = inbytes.clone();
-                let m_byte = input[0] & 0xE0;
-                let numbits = self.base_field.parametres.num_of_bits;
-                let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};
-                if self.consts.base_field_numbits % 8 <=5 {input[0] = input[0] & 0x1F;}
-                else {input.remove(0);};
-                if m_byte == 0xE0 {panic!("Invalide compressed point format ...")};
-                if m_byte & 0x80 !=0 { if input.len() != sizeinbytes {panic!("Invalide compressed point format ...")} 
-                                     }
-                else {if input.len() != (sizeinbytes*2) {panic!("Invalide compressed point format ...")}}
-                if m_byte & 0x40 !=0 { if input.iter().any(|&e| e != 0) {panic!("Invalid compression of an infinity point...");} 
-                                       else {G1Element {  point : EcPoint {x:self.base_field.one(), y : self.base_field.one(), z: self.base_field.zero() },
-                                                          consts :self.consts}
-                                            } 
-                                     }
-                else {  if input.len() == (sizeinbytes*2){ let x = self.base_field.from_bigint(&os2ip(&input[0..sizeinbytes]).to_bigint().unwrap());
-                                                          let y = self.base_field.from_bigint(&os2ip(&input[sizeinbytes..]).to_bigint().unwrap());
-                                                          G1Element {  point : EcPoint { x, y, z: self.base_field.one() },
-                                                          consts :self.consts}  
-                                                         }
-                        else { let x = self.base_field.from_bigint(&os2ip(&input[0..sizeinbytes]).to_bigint().unwrap());
-                               let y = x.sqr().multiply(&x).addto(&&self.consts.b).sqrt();
-                               if y.is_none() {panic!("Invalide point: not in the curve ...")}
-                               else { let y = y.unwrap();
-                                      let r_sign = if m_byte & 0x20 !=0 {1} else {0}; 
-                                      if (y.sign()+1) >> 1 == r_sign {G1Element {  point : EcPoint { x, y, z: self.base_field.one() },
-                                                                                   consts :self.consts}  }
-                                      else {G1Element {  point : EcPoint { x, y: y.negate(), z: self.base_field.one() },
-                                                         consts :self.consts}  }
-                                    }
-                             }                                 
-                     }
+        pub fn from_bytearray(&self,inbytes : &Vec<u8>) -> G1Element<R,N,MAX_COEFS_COUNT> {
+            //  Point de-compression/de-Serialization as described by ZCach serialization format
+            //  https://www.ietf.org/archive/id/draft-irtf-cfrg-pairing-friendly-curves-11.html#name-zcash-serialization-format-
+            let mut input = inbytes.clone();
+            let m_byte = input[0] & 0xE0;
+            let numbits = self.base_field.parametres.num_of_bits;
+            let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};
+            if self.consts.base_field_numbits % 8 <= 5 {
+                input[0] = input[0] & 0x1F;
+            } else {
+                input.remove(0);
+            };
+            if m_byte == 0xE0 {
+                panic!("Invalide compressed point format ...")
+            };
+            if m_byte & 0x80 !=0 {
+                if input.len() != sizeinbytes {
+                    panic!("Invalide compressed point format ...")
+                }
+            } else {
+                if input.len() != (sizeinbytes*2) {
+                    panic!("Invalide compressed point format ...")
+                }
             }
-            pub fn from_base64(&self,input :&str) -> G1Element<R,N,MAX_COEFS_COUNT>
-            {
-                let decoded_bytes = match general_purpose::STANDARD.decode(input) {
-                    Ok(bytes) => bytes,
-                    Err(_) => {
-                        panic!("Failed to decode base64 string");
-                    }
-                };
-                self.from_bytearray(&decoded_bytes)
-            }
+            if m_byte & 0x40 !=0 {
+                if input.iter().any(|&e| e != 0) {
+                    panic!("Invalid compression of an infinity point...");
+                } else {
+                    self.get_g1_element(&self.base_field.one(), &self.base_field.one(), &self.base_field.zero(), self.consts)
+                }
+            } else {
+                if input.len() == (sizeinbytes*2) {
+                    let x = self.base_field.from_bigint(&os2ip(&input[0..sizeinbytes]).to_bigint().unwrap());
+                    let y = self.base_field.from_bigint(&os2ip(&input[sizeinbytes..]).to_bigint().unwrap());
 
-            pub fn default_generator(&self)->G1Element<R,N,MAX_COEFS_COUNT>
-            {
-                G1Element { point : EcPoint { x : self.consts.default_generator.x, 
-                                               y : self.consts.default_generator.y, 
-                                               z : self.consts.default_generator.z },
-                            consts :self.consts} 
+                    self.get_g1_element(&x, &y, &self.base_field.one(), self.consts)
+                } else {
+                    let x = self.base_field.from_bigint(&os2ip(&input[0..sizeinbytes]).to_bigint().unwrap());
+                    let y = x.sqr().multiply(&x).addto(&&self.consts.b).sqrt();
+
+                    match y {
+                        None => panic!("Invalide compressed point format ..."),
+                        Some(y) => {
+                            let y = y;
+                            let r_sign = if m_byte & 0x20 !=0 {1} else {0};
+                            if (y.sign() + 1) >> 1 == r_sign {
+                                self.get_g1_element(&x, &y, &self.base_field.one(), self.consts)
+                            } else {
+                                self.get_g1_element(&x, &y.negate(), &self.base_field.one(), self.consts)
+                            }
+                        }
+                    }
+                }
             }
+        }
+        pub fn from_base64(&self,input :&str) -> G1Element<R,N,MAX_COEFS_COUNT> {
+            let decoded_bytes = match general_purpose::STANDARD.decode(input) {
+                Ok(bytes) => bytes,
+                Err(_) => {
+                    panic!("Failed to decode base64 string");
+                }
+            };
+            self.from_bytearray(&decoded_bytes)
+        }
+
+        fn get_g1_element(&self, x: &FieldElement<N>, y: &FieldElement<N>, z: &FieldElement<N>,
+                          consts: &'static G1Consts<R, N, MAX_COEFS_COUNT>) -> G1Element<R,N,MAX_COEFS_COUNT> {
+            G1Element {
+                point: EcPoint {
+                    x: *x,
+                    y: *y,
+                    z: *z
+                },
+                consts
+            }
+        }
+
+        pub fn default_generator(&self) -> G1Element<R,N,MAX_COEFS_COUNT> {
+            self.get_g1_element(&self.consts.default_generator.x, &self.consts.default_generator.y, &self.consts.default_generator.z, self.consts)
+        }
     }
     
 
