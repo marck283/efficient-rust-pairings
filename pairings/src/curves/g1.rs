@@ -340,24 +340,19 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
                 self.get_g1_element(&self.base_field.one(), &self.base_field.one(), &self.base_field.zero(), self.consts)
             } else {
                 let x = self.base_field.from_bigint(&os2ip(&input[0..sizeinbytes]).to_bigint().unwrap());
-                if input.len() == (sizeinbytes*2) {
+                if input.len() == sizeinbytes*2 {
                     let y = self.base_field.from_bigint(&os2ip(&input[sizeinbytes..]).to_bigint().unwrap());
 
                     self.get_g1_element(&x, &y, &self.base_field.one(), self.consts)
                 } else {
-                    let y = x.sqr().multiply(&x).addto(&&self.consts.b).sqrt();
+                    let y = x.sqr().multiply(&x).addto(&&self.consts.b).sqrt().
+                        unwrap_or_else(|| panic!("Invalid compressed point format ..."));
 
-                    match y {
-                        None => panic!("Invalid compressed point format ..."),
-                        Some(y) => {
-                            let y = y;
-                            let r_sign = if m_byte & 0x20 !=0 {1} else {0};
-                            if (y.sign() + 1) >> 1 == r_sign {
-                                self.get_g1_element(&x, &y, &self.base_field.one(), self.consts)
-                            } else {
-                                self.get_g1_element(&x, &y.negate(), &self.base_field.one(), self.consts)
-                            }
-                        }
+                    let r_sign = if m_byte & 0x20 !=0 {1} else {0};
+                    if (y.sign() + 1) >> 1 == r_sign {
+                        self.get_g1_element(&x, &y, &self.base_field.one(), self.consts)
+                    } else {
+                        self.get_g1_element(&x, &y.negate(), &self.base_field.one(), self.consts)
                     }
                 }
             }
