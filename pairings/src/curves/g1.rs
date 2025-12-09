@@ -329,36 +329,26 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
             } else {
                 input.remove(0);
             }
-            if m_byte == 0xE0 {
-                panic!("Invalide compressed point format ...")
+
+            if m_byte == 0xE0 || (m_byte & 0x80 != 0 && input.len() != sizeinbytes) ||
+                (m_byte & 0x80 == 0 && input.len() != 2*sizeinbytes) ||
+                (m_byte & 0x40 != 0 && input.iter().any(|&e| e != 0)) {
+                panic!("Invalid compressed point format ...")
             }
-            if m_byte & 0x80 !=0 {
-                if input.len() != sizeinbytes {
-                    panic!("Invalide compressed point format ...")
-                }
-            } else {
-                if input.len() != (sizeinbytes*2) {
-                    panic!("Invalide compressed point format ...")
-                }
-            }
+
             if m_byte & 0x40 !=0 {
-                if input.iter().any(|&e| e != 0) {
-                    panic!("Invalid compression of an infinity point...");
-                } else {
-                    self.get_g1_element(&self.base_field.one(), &self.base_field.one(), &self.base_field.zero(), self.consts)
-                }
+                self.get_g1_element(&self.base_field.one(), &self.base_field.one(), &self.base_field.zero(), self.consts)
             } else {
+                let x = self.base_field.from_bigint(&os2ip(&input[0..sizeinbytes]).to_bigint().unwrap());
                 if input.len() == (sizeinbytes*2) {
-                    let x = self.base_field.from_bigint(&os2ip(&input[0..sizeinbytes]).to_bigint().unwrap());
                     let y = self.base_field.from_bigint(&os2ip(&input[sizeinbytes..]).to_bigint().unwrap());
 
                     self.get_g1_element(&x, &y, &self.base_field.one(), self.consts)
                 } else {
-                    let x = self.base_field.from_bigint(&os2ip(&input[0..sizeinbytes]).to_bigint().unwrap());
                     let y = x.sqr().multiply(&x).addto(&&self.consts.b).sqrt();
 
                     match y {
-                        None => panic!("Invalide compressed point format ..."),
+                        None => panic!("Invalid compressed point format ..."),
                         Some(y) => {
                             let y = y;
                             let r_sign = if m_byte & 0x20 !=0 {1} else {0};
