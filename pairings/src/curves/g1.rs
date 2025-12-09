@@ -348,7 +348,7 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
                     let y = x.sqr().multiply(&x).addto(&&self.consts.b).sqrt().
                         unwrap_or_else(|| panic!("Invalid compressed point format ..."));
 
-                    let r_sign = if m_byte & 0x20 !=0 {1} else {0};
+                    let r_sign = (m_byte & 0x20 != 0) as i8; // "1" if the condition is true, "0" otherwise
                     if (y.sign() + 1) >> 1 == r_sign {
                         self.get_g1_element(&x, &y, &self.base_field.one(), self.consts)
                     } else {
