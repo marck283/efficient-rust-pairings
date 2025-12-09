@@ -3,13 +3,12 @@
 // During May 2024.
 
 use crate::{fields::prime_fields::FieldElement, tools::arithmetic_interface::ArithmeticOperations};
-use crate::tools::recoders::*;
 use num_bigint::BigUint;
 use std::fmt::Display;
 use std::ops::BitAnd;
 use std::str::FromStr;
 use num_traits::{One,ToPrimitive, Zero};
-
+use crate::tools::recoders::{recod_one_scalar, WMASK, WSIZE};
 
 #[derive(Clone, Copy, Debug)]
 pub struct EcPoint<T> {

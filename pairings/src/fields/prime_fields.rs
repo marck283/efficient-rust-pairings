@@ -132,21 +132,24 @@ impl <'a, const N:usize> PrimeField<N> {
             self.from_byte_array(&decoded_bytes, Endianness::Little)
         }
     
-    pub fn zero(&self) ->FieldElement<N>  {
-            FieldElement{   fieldparams: &self.parametres, 
-                            mont_limbs: [0u64; N],
-                        }
-                    }
-    pub fn one(&self) ->FieldElement<N>  {
-                        FieldElement{   fieldparams: &self.parametres, 
-                                        mont_limbs: self.parametres.one,
-                                    }
-                                }
-    pub fn hash_to_field(&self,id : &str, security_level:usize,count :usize) -> Vec<FieldElement<N>>
-        {   
-            hash_string_to_field(id, self, count, security_level, 1)
+    pub fn zero(&self) -> FieldElement<N> {
+        FieldElement {
+            fieldparams: &self.parametres,
+            mont_limbs: [0u64; N],
         }
-    } 
+    }
+
+    pub fn one(&self) -> FieldElement<N> {
+        FieldElement {
+            fieldparams: &self.parametres,
+            mont_limbs: self.parametres.one,
+        }
+    }
+
+    pub fn hash_to_field(&self,id : &str, security_level:usize,count :usize) -> Vec<FieldElement<N>> {
+        hash_string_to_field(id, self, count, security_level, 1)
+    }
+}
 
 
 impl  <'a, const N:usize> FieldElement<N>  {

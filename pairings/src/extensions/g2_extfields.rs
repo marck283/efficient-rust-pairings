@@ -197,25 +197,74 @@ impl <const N:usize, const PARAMSIZE:usize> ArithmeticOperations for ExtFieldG2E
 impl  <const N:usize, const PARAMSIZE:usize> ExtFieldG2Element<N,PARAMSIZE>
 {
     pub fn sqrt(&self) -> Option<Self> {
-        match self {    ExtFieldG2Element::Fp2_1(x) => if x.sqrt().is_none() {None} else {Some(ExtFieldG2Element::Fp2_1(x.sqrt().unwrap()))},
-                        ExtFieldG2Element::Fp4_1(x)=> if x.sqrt().is_none() {None} else {Some(ExtFieldG2Element::Fp4_1(x.sqrt().unwrap()))},
-                        ExtFieldG2Element::Fp8_1(x)=> if x.sqrt().is_none() {None} else {Some(ExtFieldG2Element::Fp8_1(x.sqrt().unwrap()))},
-                        ExtFieldG2Element::Fp2_2(x) => if x.sqrt().is_none() {None} else {Some(ExtFieldG2Element::Fp2_2(x.sqrt().unwrap()))},
-                        ExtFieldG2Element::Fp4_2(x)=> if x.sqrt().is_none() {None} else {Some(ExtFieldG2Element::Fp4_2(x.sqrt().unwrap()))},
-                        ExtFieldG2Element::Fp8_2(x)=> if x.sqrt().is_none() {None} else {Some(ExtFieldG2Element::Fp8_2(x.sqrt().unwrap()))},
-                        ExtFieldG2Element::Fp4_3(x)=> if x.sqrt().is_none() {None} else {Some(ExtFieldG2Element::Fp4_3(x.sqrt().unwrap()))},
-                        ExtFieldG2Element::Fp8_3(x)=> if x.sqrt().is_none() {None} else {Some(ExtFieldG2Element::Fp8_3(x.sqrt().unwrap()))},
-                    }       
+        match self {
+            ExtFieldG2Element::Fp2_1(x) => {
+                if x.sqrt().is_none() {
+                    None
+                } else {
+                    Some(ExtFieldG2Element::Fp2_1(x.sqrt().unwrap()))
+                }
+            },
+            ExtFieldG2Element::Fp4_1(x) => {
+                if x.sqrt().is_none() {
+                    None
+                } else {
+                    Some(ExtFieldG2Element::Fp4_1(x.sqrt().unwrap()))
+                }
+            },
+            ExtFieldG2Element::Fp8_1(x) => {
+                if x.sqrt().is_none() {
+                    None
+                } else {
+                    Some(ExtFieldG2Element::Fp8_1(x.sqrt().unwrap()))
+                }
+            },
+            ExtFieldG2Element::Fp2_2(x) => {
+                if x.sqrt().is_none() {
+                    None
+                } else {
+                    Some(ExtFieldG2Element::Fp2_2(x.sqrt().unwrap()))
+                }
+            },
+            ExtFieldG2Element::Fp4_2(x) => {
+                if x.sqrt().is_none() {
+                    None
+                } else {
+                    Some(ExtFieldG2Element::Fp4_2(x.sqrt().unwrap()))
+                }
+            },
+            ExtFieldG2Element::Fp8_2(x) => {
+                if x.sqrt().is_none() {
+                    None
+                } else {
+                    Some(ExtFieldG2Element::Fp8_2(x.sqrt().unwrap()))
+                }
+            },
+            ExtFieldG2Element::Fp4_3(x) => {
+                if x.sqrt().is_none() {
+                    None
+                } else {
+                    Some(ExtFieldG2Element::Fp4_3(x.sqrt().unwrap()))
+                }
+            },
+            ExtFieldG2Element::Fp8_3(x) => {
+                if x.sqrt().is_none() {
+                    None
+                } else {
+                    Some(ExtFieldG2Element::Fp8_3(x.sqrt().unwrap()))
+                }
+            },
+        }
     }
     pub fn is_qr(&self) -> bool {
         match self {    ExtFieldG2Element::Fp2_1(x) => {x.is_qr()},
-                        ExtFieldG2Element::Fp4_1(x)=> {x.is_qr()},
-                        ExtFieldG2Element::Fp8_1(x)=> {x.is_qr()},
+                        ExtFieldG2Element::Fp4_1(x) => {x.is_qr()},
+                        ExtFieldG2Element::Fp8_1(x) => {x.is_qr()},
                         ExtFieldG2Element::Fp2_2(x) => {x.is_qr()},
-                        ExtFieldG2Element::Fp4_2(x)=> {x.is_qr()},
-                        ExtFieldG2Element::Fp8_2(x)=> {x.is_qr()},
-                        ExtFieldG2Element::Fp4_3(x)=> {x.is_qr()},
-                        ExtFieldG2Element::Fp8_3(x)=> {x.is_qr()},
+                        ExtFieldG2Element::Fp4_2(x) => {x.is_qr()},
+                        ExtFieldG2Element::Fp8_2(x) => {x.is_qr()},
+                        ExtFieldG2Element::Fp4_3(x) => {x.is_qr()},
+                        ExtFieldG2Element::Fp8_3(x) => {x.is_qr()},
                     }       
     }
     pub fn sign(&self) -> i8 {
@@ -544,4 +593,4 @@ impl<'a, const N: usize, const PARAMSIZE: usize> fmt::Display for ExtFieldG2Elem
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:}", &self.to_dec_string())
     }
-    }
+}

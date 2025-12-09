@@ -88,8 +88,7 @@ impl <const N:usize> Fp2Element<N>{
     pub fn sqrt(&self) -> Option<Self>{
         let outparams = self.content[0].fieldparams;
         let inv2 = FieldElement{mont_limbs: outparams.inv2, fieldparams:outparams };   
-        let zero =Self {content:[ FieldElement{mont_limbs:outparams.zero,fieldparams:outparams},
-                                                    FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}]};
+        let zero = Self {content:[ FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}; 2]};
         let rootdelta = self.content[0].sqr().addto(&self.content[1].sqr()).sqrt();
         if rootdelta.is_some() {
             let mut t1 = self.content[0].addto(&rootdelta.unwrap()).multiply(&inv2);

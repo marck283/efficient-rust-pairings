@@ -29,12 +29,14 @@ pub trait  ExtField<const PARAMSIZE:usize,const ORDER :usize, const N:usize>
         // Constructor of a new implemented extension from a base field  
         fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Self;
 
-        // Generate a random element from the extention field
+        fn get_field_consts_pair(&self) -> (PrimeField<N>, Option<&'static ExFieldConsts<PARAMSIZE,N>>) {
+            (self.field_interface(), self.extconsts_interface())
+        }
+
+        // Generate a random element from the extension field
         fn random_element(&self) -> Self::ElementType {
-            let field = self.field_interface();
-            let consts =self.extconsts_interface();
-            let mut result =  [FieldElement { mont_limbs: [0; N],
-                                                                        fieldparams: field.parametres};
+            let (field, consts) = self.get_field_consts_pair();
+            let mut result =  [field.zero();
                                                         ORDER];       
             for i in 0..ORDER{result[i] = FieldElement { mont_limbs: self.field_interface().random_element().mont_limbs,
                                                                 fieldparams: field.parametres};         
@@ -42,70 +44,71 @@ pub trait  ExtField<const PARAMSIZE:usize,const ORDER :usize, const N:usize>
             Self::ElementType::new(&result, consts)
         }
 
-        //  Generate an element in the extention field from a list of BigIntegets
-        fn from_big_integers(&self, source :Vec<BigInt>) -> Self::ElementType{
-            if source.len() != ORDER {panic!("Size of input does not correspond to the field's extension ...");}        
-            let field = self.field_interface();
-            let consts =self.extconsts_interface();
-            let zero = FieldElement {   mont_limbs: [0; N],
-                                                         fieldparams: field.parametres,
-                                                     };        
-            let mut result: [FieldElement<N>; ORDER] = [zero; ORDER];        
-            for i in 0..source.len() {result[i] = field.from_bigint(&source[i]);}        
+        //  Generate an element in the extension field from a list of BigIntegers
+        fn from_big_integers(&self, source :Vec<BigInt>) -> Self::ElementType {
+            if source.len() != ORDER {
+                panic!("Size of input does not correspond to the field's extension ...");
+            }
+            let (field, consts) = self.get_field_consts_pair();
+
+            let mut result: [FieldElement<N>; ORDER] = [field.zero(); ORDER];
+            for i in 0..source.len() {result[i] = field.from_bigint(&source[i]);}
             Self::ElementType::new(&result, consts)
         }
 
-        //  Generate an element in the extention field from a list of Hexadecimal strings 
-        fn from_hex_strings(&self, source :&[&str]) -> Self::ElementType{
-            if source.len() != ORDER {panic!("Size of input does not correspond to the field's extension ...");}        
-            let field = self.field_interface();
-            let consts =self.extconsts_interface();
-            let zero = FieldElement {   mont_limbs: [0; N],
-                                                        fieldparams: field.parametres,
-                                                    };        
-            let mut result: [FieldElement<N>; ORDER] = [zero; ORDER];        
+        //  Generate an element in the extension field from a list of Hexadecimal strings
+        fn from_hex_strings(&self, source :&[&str]) -> Self::ElementType {
+            if source.len() != ORDER {
+                panic!("Size of input does not correspond to the field's extension ...");
+            }
+            let (field, consts) = self.get_field_consts_pair();
+
+            let mut result: [FieldElement<N>; ORDER] = [field.zero(); ORDER];
             for i in 0..source.len() {result[i] = field.from_hex_str(&source[i]);}        
             Self::ElementType::new(&result,consts)
         }
 
-        //  Generate an element in the extention field from a list of strings (Decimal format)
-        fn from_strings(&self, source :&[&str]) -> Self::ElementType{
-            if source.len() != ORDER {panic!("Size of input does not correspond to the field's extension ...");}        
-            let field = self.field_interface();
-            let consts =self.extconsts_interface();
-            let zero = FieldElement {   mont_limbs: [0; N],
-                                                         fieldparams: field.parametres,
-                                                     };        
-            let mut result: [FieldElement<N>; ORDER] = [zero; ORDER];        
+        //  Generate an element in the extension field from a list of strings (Decimal format)
+        fn from_strings(&self, source :&[&str]) -> Self::ElementType {
+            if source.len() != ORDER {
+                panic!("Size of input does not correspond to the field's extension ...");
+            }
+            let (field, consts) = self.get_field_consts_pair();
+
+            let mut result: [FieldElement<N>; ORDER] = [field.zero(); ORDER];
             for i in 0..source.len() {result[i] = field.from_str(&source[i]);}        
             Self::ElementType::new(&result,consts)
         }
 
         
-        //  Generate an element in the extention field from a list of baseField's elements (Fp)
-        fn from_field_elements(&self, source :&[FieldElement<N>]) -> Self::ElementType{
-            if source.len() != ORDER {panic!("Size of input does not correspond to the field's extension ...");}        
-            let field = self.field_interface();
-            let consts =self.extconsts_interface();
-            let zero = FieldElement {   mont_limbs: [0; N],
-                                                         fieldparams: field.parametres,
-                                                     };        
-            let mut result: [FieldElement<N>; ORDER] = [zero; ORDER];        
+        //  Generate an element in the extension field from a list of baseField's elements (Fp)
+        fn from_field_elements(&self, source :&[FieldElement<N>]) -> Self::ElementType {
+            if source.len() != ORDER {
+                panic!("Size of input does not correspond to the field's extension ...");
+            }
+            let (field, consts) = self.get_field_consts_pair();
+
+            let mut result: [FieldElement<N>; ORDER] = [field.zero(); ORDER];
             for i in 0..source.len() {result[i] = source[i];}        
             Self::ElementType::new(&result,consts)
         }
 
-        fn from_byte_array(&self, source :&[u8]) -> Self::ElementType{
-            let field = self.field_interface();
+        fn from_byte_array(&self, source :&[u8]) -> Self::ElementType {
+            let (field, consts) = self.get_field_consts_pair();
+            //let field = self.field_interface();
             let numbits = field.parametres.num_of_bits;                
             let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1}; 
-            if sizeinbytes*ORDER != source.len() {panic!("Size of input does not correspond to the field's extension ...");}        
-            let consts =self.extconsts_interface();
-            let zero = FieldElement {   mont_limbs: [0; N],
+            if sizeinbytes*ORDER != source.len() {
+                panic!("Size of input does not correspond to the field's extension ...");
+            }
+            //let consts =self.extconsts_interface();
+            /*let zero = FieldElement {   mont_limbs: [0; N],
                                                          fieldparams: field.parametres,
-                                                     };        
-            let mut result: [FieldElement<N>; ORDER] = [zero; ORDER];   
-            for i in 0..ORDER {result[i] =  field.from_bigint(&os2ip(&source[i*sizeinbytes..(i+1)*sizeinbytes]).to_bigint().unwrap());}        
+                                                     };*/
+            let mut result: [FieldElement<N>; ORDER] = [field.zero(); ORDER];
+            for i in 0..ORDER {
+                result[i] = field.from_bigint(&os2ip(&source[i*sizeinbytes..(i+1)*sizeinbytes]).to_bigint().unwrap());
+            }
             Self::ElementType::new(&result,consts)
         }
 
@@ -119,19 +122,17 @@ pub trait  ExtField<const PARAMSIZE:usize,const ORDER :usize, const N:usize>
             self.from_byte_array(&decoded_bytes)
         }
 
-        //  Generate Zero element of the extention field (identity element with respect to Addition)
+        //  Generate Zero element of the extension field (identity element with respect to Addition)
         fn zero(&self) -> Self::ElementType{
-            let field = self.field_interface();
-            let consts =self.extconsts_interface();
+            let (field, consts) = self.get_field_consts_pair();
             Self::ElementType::new(&[FieldElement { mont_limbs: field.zero().mont_limbs,
                                                             fieldparams: field.parametres,
                                                            }; ORDER], consts)
         }
 
-        //  Generate One element of the extention field (identity element with respect to Multiplication)
+        //  Generate One element of the extension field (identity element with respect to Multiplication)
         fn one(&self) -> Self::ElementType{
-            let field = self.field_interface();
-            let consts =self.extconsts_interface();
+            let (field, consts) = self.get_field_consts_pair();
             let mut one = [FieldElement {   mont_limbs: field.zero().mont_limbs,
                                                                       fieldparams: field.parametres,
                                                                   }; ORDER];
@@ -148,84 +149,97 @@ pub trait ExtElement<const PARAMSIZE:usize,const ORDER :usize, const N:usize>{
     fn multiply(&self, rhs:&Self)-> Self;
     fn sqr(&self)-> Self;
     fn new(content :&[FieldElement<N>; ORDER], consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Self;
+
+    fn get_zero_a_b<'a>(&'a self, b: &'a Self) -> (&'a [FieldElement<N>; ORDER], &'a [FieldElement<N>; ORDER], FieldElement<N>) {
+        let _a = self.content_interface();
+        let _b = b.content_interface();
+        let zero = _a[0].zero();
+
+        (_a, _b, zero)
+    }
     
-    fn addto (&self, b : &Self) -> Self where Self: Sized      
-            {   let _a = self.content_interface();
-                let _b = b.content_interface();
-                let zero = FieldElement{mont_limbs:[0;N],fieldparams:_a[0].fieldparams};
-                let mut result: [FieldElement<N>; ORDER] =[zero;ORDER] ;                
-                for i in 0..ORDER {  result[i] = _a[i].addto(&_b[i])}
-                Self::new( &result, self.constants_interface())
-            }
-    fn substract (&self, b : &Self) -> Self where Self: Sized      
-            {   let _a = self.content_interface();
-                let _b = b.content_interface();
-                let zero = FieldElement{mont_limbs:[0;N],fieldparams:_a[0].fieldparams};
-                let mut result: [FieldElement<N>; ORDER] =[zero;ORDER] ;                
-                for i in 0..ORDER { result[i] = _a[i].substract(&_b[i])}
-                Self::new( &result,self.constants_interface())
-            }
-    fn negate (&self) -> Self where Self: Sized      
-            {   let _a = &self.content_interface();
-                let zero = FieldElement{mont_limbs:[0;N],fieldparams:_a[0].fieldparams};
-                let mut result: [FieldElement<N>; ORDER] =[zero;ORDER] ;                
-                for i in 0..ORDER { result[i] = _a[i].negate()}
-                Self::new( &result,self.constants_interface())
-            }
-    fn double (&self) -> Self where Self: Sized      
-            {   let _a = &self.content_interface();
-                let zero = FieldElement{mont_limbs:[0;N],fieldparams:_a[0].fieldparams};
-                let mut result: [FieldElement<N>; ORDER] =[zero;ORDER] ;                
-                for i in 0..ORDER { result[i] = _a[i].double()}
-                Self::new( &result,self.constants_interface())
-            }            
+    fn addto (&self, b : &Self) -> Self where Self: Sized {
+        let (_a, _b, zero) = self.get_zero_a_b(&b);
+        let mut result: [FieldElement<N>; ORDER] = [zero;ORDER] ;
+        for i in 0..ORDER {  result[i] = _a[i].addto(&_b[i])}
+        Self::new( &result, self.constants_interface())
+    }
+
+    fn substract (&self, b : &Self) -> Self where Self: Sized {
+        let (_a, _b, zero) = self.get_zero_a_b(&b);
+
+        let mut result: [FieldElement<N>; ORDER] = [zero;ORDER] ;
+        for i in 0..ORDER { result[i] = _a[i].substract(&_b[i])}
+        Self::new( &result,self.constants_interface())
+    }
+
+    fn negate (&self) -> Self where Self: Sized {
+        let _a = &self.content_interface();
+        let zero = _a[0].zero();
+        let mut result: [FieldElement<N>; ORDER] =[zero;ORDER] ;
+        for i in 0..ORDER { result[i] = _a[i].negate()}
+        Self::new( &result,self.constants_interface())
+    }
+
+    fn double (&self) -> Self where Self: Sized {
+        let _a = &self.content_interface();
+        let mut result: [FieldElement<N>; ORDER] = [_a[0].zero(); ORDER];
+
+        for i in 0..ORDER {
+            result[i] = _a[i].double()
+        }
+        Self::new( &result,self.constants_interface())
+    }
+
     fn equal(&self, other: &Self) -> bool {
-                let _a = &self.content_interface();
-                let _b = other.content_interface();
-                let mut eq =true;
-                for i in 0..ORDER { eq = eq & _a[i].equal(&_b[i])}
-                eq
+        let _a = &self.content_interface();
+        let _b = other.content_interface();
+        let mut eq =true;
+        for i in 0..ORDER { eq = eq & _a[i].equal(&_b[i])}
+        eq
+    }
+
+    fn mulbyu8(&self,  rhs: u8)-> Self where Self: Sized {
+        let _a = self.content_interface();
+        let zero = _a[0].zero();
+        match  rhs {
+            0 => { Self::new(&[zero;ORDER],self.constants_interface())},
+            1 => Self::new(_a,self.constants_interface()),
+            2 => self.addto(&self),
+            3 => self.addto(&self).addto(&self),
+            4 =>{let double =self.addto(&self);
+                double.addto(&double)},
+            5 =>{let double =self.addto(&self);
+                let fourth =double.addto(&double);
+                fourth.addto(&self) },
+            _ =>{  let mut result: [FieldElement<N>; ORDER] =[zero;ORDER] ;
+                for i in 0..ORDER {
+                    result[i] = rhs * _a[i];
+                }
+                Self::new(&result,self.constants_interface())
             }
-    fn mulbyu8(&self,  rhs: u8)-> Self where Self: Sized 
-            {   let _a = self.content_interface();
-                let zero = FieldElement{mont_limbs:[0;N],fieldparams:_a[0].fieldparams};
-                match  rhs {    0 => { Self::new(&[zero;ORDER],self.constants_interface())},
-                                1 => Self::new(_a,self.constants_interface()),
-                                2 => self.addto(&self),
-                                3 => self.addto(&self).addto(&self),
-                                4 =>{let double =self.addto(&self);
-                                        double.addto(&double)},      
-                                5 =>{let double =self.addto(&self);
-                                        let fourth =double.addto(&double);
-                                        fourth.addto(&self) },
-                                _ =>{  let mut result: [FieldElement<N>; ORDER] =[zero;ORDER] ; 
-                                        for i in 0..ORDER{  result[i] = rhs * _a[i]};
-                                        Self::new(&result,self.constants_interface())
-                                    }            
-                            }        
-            }
-    fn mulby_fp_element (&self, b : &FieldElement<N>) -> Self where Self: Sized      
-            {   let _a = self.content_interface();
-                let zero = FieldElement{mont_limbs:[0;N],fieldparams:_a[0].fieldparams};
-                let mut result: [FieldElement<N>; ORDER] =[zero;ORDER] ;                
-                for i in 0..ORDER {  result[i] = _a[i].multiply(&b)}
-                Self::new( &result, self.constants_interface())
-            }
+        }
+    }
+
+    fn mulby_fp_element(&self, b : &FieldElement<N>) -> Self where Self: Sized {
+        let _a = self.content_interface();
+        let mut result: [FieldElement<N>; ORDER] = [_a[0].zero(); ORDER];
+
+        for i in 0..ORDER {
+            result[i] = _a[i].multiply(&b);
+        }
+        Self::new(&result, self.constants_interface())
+    }
             
     fn pow(&self,e :& dyn Exponent<N>)-> Self where Self: Sized {
         let _a = self.content_interface();
         let out_params= _a[0].fieldparams;
-        let one = FieldElement {
+
+        let mut result: [FieldElement<N>; ORDER] = [_a[0].zero(); ORDER];
+        result[0] = FieldElement {
             mont_limbs: out_params.one,
             fieldparams: out_params
         };
-        let zero = FieldElement {
-            mont_limbs: [0; N],
-            fieldparams: out_params
-        };
-
-        let mut result: [FieldElement<N>; ORDER] = [zero; ORDER];
-        result [0] = one;
         let mut result = Self::new(&result, self.constants_interface());
         if let Some(array) = e.to_u64_array() {
             let limbnum= e.get_len();
@@ -241,26 +255,29 @@ pub trait ExtElement<const PARAMSIZE:usize,const ORDER :usize, const N:usize>{
         result
     }
     
-    fn to_a_string(&self) -> String
-            {  let mut out= String::new();
-               let _a = self.content_interface();
-               out.push('(');               
-               for i in 0..ORDER-1 { out.push_str(&_a[i].to_string());
-                                        out.push_str(" , \n");
-                                    }      
-                out.push_str(&_a[ORDER - 1].to_string());                                        
-                out.push_str(")");
-                String::from(&out)
-            }
+    fn to_a_string(&self) -> String {
+        let mut out= String::new();
+        let _a = self.content_interface();
+        out.push('(');
+        for i in 0..ORDER-1 {
+            out.push_str(&_a[i].to_string());
+            out.push_str(" , \n");
+        }
+        out.push_str(&_a[ORDER - 1].to_string());
+        out.push_str(")");
+        String::from(&out)
+    }
     
-    fn to_i2osp_bytearray(&self) -> Vec<u8>
-            {  let mut out= Vec::<u8>::new();
-               let _a = self.content_interface();       
-               let numbits = _a[0].fieldparams.num_of_bits;                
-               let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};     
-               for i in 0..ORDER { out.extend(i2osp_pf(&_a[i], sizeinbytes)) ;}      
-               out 
-            }
+    fn to_i2osp_bytearray(&self) -> Vec<u8> {
+        let mut out= Vec::<u8>::new();
+        let _a = self.content_interface();
+        let numbits = _a[0].fieldparams.num_of_bits;
+        let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};
+        for i in 0..ORDER {
+            out.extend(i2osp_pf(&_a[i], sizeinbytes));
+        }
+        out
+    }
     
     fn to_hex_string(&self) -> String
             {  let mut out= String::new();
@@ -274,9 +291,9 @@ pub trait ExtElement<const PARAMSIZE:usize,const ORDER :usize, const N:usize>{
                 String::from(&out)
             }
 
-    fn encode_to_base64(&self) -> String
-            {  general_purpose::STANDARD.encode(self.to_i2osp_bytearray())
-            }
+    fn encode_to_base64(&self) -> String {
+        general_purpose::STANDARD.encode(self.to_i2osp_bytearray())
+    }
 
     fn is_one(&self) -> bool
             {   let a = self.content_interface();
