@@ -328,10 +328,10 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
                 input[0] = input[0] & 0x1F;
             } else {
                 input.remove(0);
-            };
+            }
             if m_byte == 0xE0 {
                 panic!("Invalide compressed point format ...")
-            };
+            }
             if m_byte & 0x80 !=0 {
                 if input.len() != sizeinbytes {
                     panic!("Invalide compressed point format ...")
