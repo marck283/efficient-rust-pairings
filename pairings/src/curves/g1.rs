@@ -323,7 +323,7 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
             let mut input = inbytes.clone();
             let m_byte = input[0] & 0xE0;
             let numbits = self.base_field.parametres.num_of_bits;
-            let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};
+            let sizeinbytes = (numbits >> 3) + (((numbits % 8) != 0) as usize);
             if self.consts.base_field_numbits % 8 <= 5 {
                 input[0] = input[0] & 0x1F;
             } else {
