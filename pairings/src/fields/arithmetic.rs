@@ -544,8 +544,10 @@ pub fn invert <const N: usize> (a : &[u64; N],_params :&super::prime_fields::Fie
         }
     }
 
-fn montgomery_ladder<const N: usize>(a: &[u64; N], e: &[u64], mut result: [u64; N], _params: &super::prime_fields::FieldParams<N>) {
+fn montgomery_ladder<const N: usize>(a: &[u64; N], e: &[u64], _params: &super::prime_fields::FieldParams<N>) -> [u64; N] {
+    let mut result = _params.one;
     let mut r1 = a.clone();
+
     for i in e.as_ref().iter().rev() {
         for j in (0..64).rev() {
             if (i >> j) & 1u64 == 0u64 {
@@ -554,12 +556,15 @@ fn montgomery_ladder<const N: usize>(a: &[u64; N], e: &[u64], mut result: [u64; 
             } else {
                 result = mul(&result, &r1, _params);
                 r1 = sqr(&r1,_params)
-            }
-        }
+            }        }
     }
+
+    result
 }
 
-fn sqr_and_mul<const N: usize>(a: &[u64; N], e: &[u64], mut result: [u64; N], _params: &super::prime_fields::FieldParams<N>) {
+fn sqr_and_mul<const N: usize>(a: &[u64; N], e: &[u64], _params: &super::prime_fields::FieldParams<N>) -> [u64; N] {
+    let mut result = _params.one;
+
     for i in e.as_ref().iter().rev() {
         for j in (0..64).rev() {
             result = sqr(&result,_params);
@@ -568,18 +573,17 @@ fn sqr_and_mul<const N: usize>(a: &[u64; N], e: &[u64], mut result: [u64; N], _p
             }
         }
     }
-}
-
-pub fn pow <const N: usize> (a : &[u64; N], e :&[u64], useladder:bool,_params :&super::prime_fields::FieldParams<N>)-> [u64; N] {
-        // Implements montgomery Ladder (secure but relatively slow with respect to square and multiply)
-    let result = _params.one;
-    if useladder {
-        montgomery_ladder(&a, &e, result, &_params);
-    } else {
-        sqr_and_mul(&a, &e, result, &_params);
-    }
 
     result
+}
+
+pub fn pow <const N: usize> (a : &[u64; N], e :&[u64], useladder:bool,_params :&super::prime_fields::FieldParams<N>) -> [u64; N] {
+    // Implements montgomery Ladder (secure but relatively slow with respect to square and multiply)
+    if useladder {
+        montgomery_ladder(&a, &e, &_params)
+    } else {
+        sqr_and_mul(&a, &e, &_params)
+    }
 }
 
 fn tonelli_shanks<const N: usize>(a:&[u64; N],_params :&super::prime_fields::FieldParams<N>) -> Option<[u64; N]> {
