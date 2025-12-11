@@ -94,7 +94,19 @@ impl <const N:usize> Fp2Element<N>{
         if rootdelta.is_some() {
             let mut t1 = self.content[0].addto(&rootdelta.unwrap()).multiply(&inv2);
             let mut a = t1.sqrt();
-            if a.is_none() { t1 = t1.substract(&rootdelta.unwrap());                             
+            let mut i = 0u8;
+
+            while a.is_none() && i <= 2u8 {
+                if i != 1u8 {
+                    t1 = t1.substract(&rootdelta.unwrap());
+                } else {
+                    t1 = t1.negate();
+                }
+
+                a = t1.sqrt();
+                i = i + 1;
+            }
+            /*if a.is_none() { t1 = t1.substract(&rootdelta.unwrap());
                              a  = t1.sqrt();   
                              if a.is_none(){ t1 = t1.negate();
                                              a  = t1.sqrt();   
@@ -102,8 +114,22 @@ impl <const N:usize> Fp2Element<N>{
                                                              a = t1.sqrt(); 
                                                             }
                                             }
-                           }
-            if a.is_none() { None }
+                           }*/
+
+            match a {
+                None => None,
+                Some(a) => {
+                    if a.equal(&FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}) {
+                        Some(zero)
+                    } else {
+                        Some(Self {
+                            content:[a, self.content[1].multiply(&a.addto(&a).invert())]
+                        })
+                    }
+                }
+            }
+
+            /*if a.is_none() { None }
             else { if a.unwrap().equal(&FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}) 
                             {  Some(zero) }
                    else {Some(Self{content:[a.unwrap(),
@@ -111,11 +137,12 @@ impl <const N:usize> Fp2Element<N>{
                                   }
                              )
                         } 
-                 }   
-            }
-            else { None }  
+                 }*/
+        } else {
+            None
         }
     }
+}
     
 impl<const N: usize> fmt::Display for Fp2Element<N> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{:}", &self.to_a_string()) }
