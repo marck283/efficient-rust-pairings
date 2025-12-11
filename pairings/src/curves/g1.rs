@@ -145,7 +145,7 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                                                         } else {
                                                             result.substract(&tmp);
                                                             //result.point.add_jacobian(&tmp.point.negate())
-                                                        };
+                                                        }
                                                         code = code >> WDSIZE;
                                                     }           
                         if alpha.is_zero() {
