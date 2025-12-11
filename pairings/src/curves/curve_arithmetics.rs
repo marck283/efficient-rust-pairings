@@ -2,13 +2,13 @@
 // EEDIS-Laboratory. UDL-University. Algeria
 // During May 2024.
 
+use crate::tools::recoders::{recod_one_scalar, WMASK, WSIZE};
 use crate::{fields::prime_fields::FieldElement, tools::arithmetic_interface::ArithmeticOperations};
 use num_bigint::BigUint;
+use num_traits::{One, ToPrimitive, Zero};
 use std::fmt::Display;
 use std::ops::BitAnd;
 use std::str::FromStr;
-use num_traits::{One,ToPrimitive, Zero};
-use crate::tools::recoders::{recod_one_scalar, WMASK, WSIZE};
 
 #[derive(Clone, Copy, Debug)]
 pub struct EcPoint<T> {
@@ -76,7 +76,7 @@ impl <T> EcPoint<T> where T :ArithmeticOperations + Clone + Copy + Display, {
                     x: x3.clone(),
                     y: r.multiply(&v.substract(&x3)).substract(&s1.multiply(&j).double()),
                     //z: self.z.addto(&rhs.z).sqr().substract(&z1_2).substract(&z2_2).multiply(&h)
-                    z: self.z.multiply(&rhs.z).multiply(&h).double()
+                    z: self.z.multiply(&rhs.z).double().multiply(&h)
                 }
             }
         }
@@ -96,8 +96,9 @@ impl <T> EcPoint<T> where T :ArithmeticOperations + Clone + Copy + Display, {
                 let x3 = r.sqr().substract(&j).substract(&v.double());
                 Self { x : x3.clone(),
                        y : r.multiply(&v.substract(&x3)).substract(&self.y.multiply(&j).double()),
-                       z : self.z.addto(&h).sqr().substract(&z1_2).substract(&hh)  
-                     } 
+                       //z : self.z.addto(&h).sqr().substract(&z1_2).substract(&hh)
+                       z : self.z.multiply(&h).double() // Equivalent formulation
+                     }
                 }
                 
     pub fn multiply_with_const(&self , scalar :i128) -> EcPoint<T>{
@@ -131,49 +132,50 @@ impl <T> EcPoint<T> where T :ArithmeticOperations + Clone + Copy + Display, {
     }
 
     pub fn multiply<const N:usize>(&self , scalar :&FieldElement<N>) -> EcPoint<T> {
-        // Constant-time multiplication using w-sliding window (w=3)
+        // Constant-time multiplication using w-sliding window (w=3)s
         let infinit = Self { x: self.x.one(), y: self.x.one(), z: self.x.zero() };
-        let ff: BigUint = BigUint::from_str("255").unwrap();
+
         if self.z.is_zero()  {
             infinit
         } else {
             let s = scalar.to_big_uint();
             if s == BigUint::zero() {
-                infinit.clone()
-            } else {
-                if s == BigUint::one() {
-                    self.clone()
-                } else {
-                    if s == (BigUint::from(2u8))  {
-                        self.double_jacobian()
-                    } else {
-                        let mut lookup = [infinit;5];
-                        lookup[0] = self.double_jacobian();
-                        lookup[1] = self.clone();
-                        lookup[2] = self.add_jacobian(&lookup[0]);
-                        lookup[3] = lookup[0].add_jacobian(&lookup[2]);
-                        lookup[4] = lookup[0].add_jacobian(&lookup[3]);
-                        let mut code = recod_one_scalar(&(&s + ((&s).bitand(BigUint::one()) + BigUint::one())));
-                        let mut result = lookup[(((&code).bitand(ff.clone()).to_u8().unwrap() & (WMASK >> 1)) + 1) as usize];
-                        code = code >> (WSIZE -1);
-                        while code != BigUint::one() {
-                            let limb = (&code).bitand(ff.clone()).to_u8().unwrap();
-                            let sig : i8 = (2 * (limb & 1) as i8) - 1; //2 * ((limb as i8) & 1) - 1;
-                            let idx: usize = (((limb & WMASK) >> 1) + 1) as usize;
-                            result = result.double_jacobian().double_jacobian().double_jacobian();
-                            if sig == 1 {
-                                result = result.add_jacobian(&lookup[idx])
-                            } else {
-                                result = result.add_jacobian(&lookup[idx].negate())
-                            }
-                            code = code >> WSIZE;
-                        }
-                        result.to_affine();
-                        result = result.add_jacobian(&lookup[1 - (&s).bitand(BigUint::one()).to_usize().unwrap()].negate());
-                        result
-                    }
-                }
+                return infinit.clone()
             }
+
+            if s == BigUint::one() {
+                return self.clone()
+            }
+
+            if s == BigUint::from(2u8) {
+                return self.double_jacobian()
+            }
+
+            let mut lookup = [infinit;5];
+            lookup[0] = self.double_jacobian();
+            lookup[1] = self.clone();
+            lookup[2] = self.add_jacobian(&lookup[0]);
+            lookup[3] = lookup[0].add_jacobian(&lookup[2]);
+            lookup[4] = lookup[0].add_jacobian(&lookup[3]);
+            let mut code = recod_one_scalar(&(&s + ((&s).bitand(BigUint::one()) + BigUint::one())));
+            let ff: BigUint = BigUint::from_str("255").unwrap();
+            let mut result = lookup[(((&code).bitand(ff.clone()).to_u8().unwrap() & (WMASK >> 1)) + 1) as usize];
+            code = code >> (WSIZE -1);
+            while code != BigUint::one() {
+                let limb = (&code).bitand(ff.clone()).to_u8().unwrap();
+                let sig : i8 = (2 * (limb & 1) as i8) - 1; //2 * ((limb as i8) & 1) - 1;
+                let idx: usize = (((limb & WMASK) >> 1) + 1) as usize;
+                result = result.double_jacobian().double_jacobian().double_jacobian();
+                if sig == 1 {
+                    result = result.add_jacobian(&lookup[idx])
+                } else {
+                    result = result.add_jacobian(&lookup[idx].negate())
+                }
+                code = code >> WSIZE;
+            }
+            result.to_affine();
+            result = result.add_jacobian(&lookup[1 - (&s).bitand(BigUint::one()).to_usize().unwrap()].negate());
+            result
         }
     }
 

@@ -318,7 +318,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
         let mut naf_u_repr:Option<Vec<i8>> = None;
         let mut naf_um1_repr:Option<Vec<i8>> = None;
         if use_naf {naf_u_repr = Some(<i128 as Exponent<N>>::to_naf(&u));
-                    naf_um1_repr = Some(<i128 as Exponent<N>>::to_naf(&um1));};
+                    naf_um1_repr = Some(<i128 as Exponent<N>>::to_naf(&um1));}
         
                 // Soft part of the exponentiation: f^((p^12-1)*(p^4+1))        
         let mut s = self.conjugate().multiply(&self.invert());                         

@@ -9,7 +9,7 @@ use super::super::super::extensions::ext_fields::{ExtElement, ExtField,ExFieldCo
 use super::fp2::Fp2Element;
 
 #[derive(Clone, Copy,Debug)]
-pub struct Fp4Element<const PARAMSIZE:usize,const N:usize>{
+pub struct Fp4Element<const PARAMSIZE:usize,const N:usize> {
                                     pub content :[FieldElement<N>;4],
                                     pub constants :&'static ExFieldConsts<PARAMSIZE,N>
                                     }
@@ -89,8 +89,8 @@ impl <const PARAMSIZE:usize,const N:usize> Fp4Element <PARAMSIZE,N>{
     }   
  
     pub fn invert(&self) -> Self{        
-        let a = Fp2Element{content :[self.content[0],self.content[1]], constants:self.constants };
-        let b = Fp2Element{content :[self.content[2],self.content[3]], constants:self.constants };        
+        let a = Fp2Element::new(&[self.content[0],self.content[1]], Some(self.constants));
+        let b = Fp2Element::new(&[self.content[2],self.content[3]], Some(self.constants));
         let t = a.sqr().substract(&b.sqr().mul_by_u()).invert();               
         let a = a.multiply(&t);
         let b = b.multiply(&t).negate();
@@ -98,27 +98,40 @@ impl <const PARAMSIZE:usize,const N:usize> Fp4Element <PARAMSIZE,N>{
             constants :self.constants  }      
     }
 
-    pub fn is_qr(&self) -> bool{        
-        let a = Fp2Element{content :[self.content[0],self.content[1]], constants:self.constants };
-        let b = Fp2Element{content :[self.content[2],self.content[3]], constants:self.constants };
+    pub fn is_qr(&self) -> bool {
+        let a = Fp2Element::new(&[self.content[0],self.content[1]], Some(self.constants));
+        let b = Fp2Element::new(&[self.content[2],self.content[3]], Some(self.constants));
         a.sqr().substract(&b.sqr().mul_by_u()).is_qr()
-        }
+    }
 
-    pub fn sqrt(&self) -> Option<Self>{
+    pub fn sqrt(&self) -> Option<Self> {
         let outparams = self.content[0].fieldparams;
         let inv2 = FieldElement{mont_limbs: outparams.inv2, fieldparams:outparams};   
-        let zero =Self{  content:[FieldElement{mont_limbs:outparams.zero,fieldparams:outparams};4], 
+        let zero = Self{  content:[FieldElement{mont_limbs:outparams.zero,fieldparams:outparams};4],
                                               constants : self.constants};
         let a = Fp2Element{content :[self.content[0],self.content[1]], constants:self.constants};
         let b = Fp2Element{content :[self.content[2],self.content[3]], constants:self.constants };
         let rootdelta: Option<Fp2Element<PARAMSIZE,N>> = a.sqr().substract(&b.sqr().mul_by_u()).sqrt();
         if rootdelta.is_some() {
             let rootdelta = rootdelta.unwrap();
-            let mut t = Fp2Element{content :[ rootdelta.content[0].addto(&self.content[0]).multiply(&inv2),
+            let mut t = Fp2Element::new(&[ rootdelta.content[0].addto(&self.content[0]).multiply(&inv2),
                                                              rootdelta.content[1].addto(&self.content[1]).multiply(&inv2)],
-                                                             constants:self.constants};    
+                                                             Some(self.constants));
             let mut r = t.sqrt();
-            if r.is_none() { t = t.negate();                                     
+            let mut i = 0u8;
+
+            while r.is_none() && i <= 2u8 {
+                if i < 2u8 {
+                    t = t.negate();
+                } else {
+                    t = t.substract(&rootdelta);
+                }
+
+                r = t.sqrt();
+                i = i + 1;
+            }
+
+            /*if r.is_none() { t = t.negate();
                              r = t.sqrt();   
                              if r.is_none(){ t = t.negate();
                                              r = t.sqrt();   
@@ -126,8 +139,24 @@ impl <const PARAMSIZE:usize,const N:usize> Fp4Element <PARAMSIZE,N>{
                                                              r = t.sqrt(); 
                                                             }
                                             }
-                           }
-            if r.is_none() { None }
+                           }*/
+
+            match r {
+                None => None,
+                Some(r) => {
+                    if r.equal(&Fp2Element::new(&[FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}; 2], Some(self.constants))) {
+                        Some(zero)
+                    } else {
+                        let t = b.multiply(&r.double().invert());
+                        Some(Self {
+                            content: [r.content[0], r.content[1], t.content[0],t.content[1]],
+                            constants: self.constants
+                        })
+                    }
+                }
+            }
+
+            /*if r.is_none() { None }
             else { if r.unwrap().equal(&Fp2Element{ content :[FieldElement{mont_limbs:outparams.zero,fieldparams:outparams};2], 
                                                     constants:self.constants}) 
                             {  Some(zero) }
@@ -140,10 +169,11 @@ impl <const PARAMSIZE:usize,const N:usize> Fp4Element <PARAMSIZE,N>{
                                     }
                              )
                         } 
-                 }   
-            }
-            else { None }  
+                 }*/
+        } else {
+            None
         }
+    }
     
     pub fn mulby_v(&self) -> Self {
             Fp4Element {content : [self.content[3].multiply(&self.constants.base_qnr), self.content[2],self.content[0], self.content[1]],                                                                                                                                                             

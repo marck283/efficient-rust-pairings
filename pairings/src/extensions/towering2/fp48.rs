@@ -667,7 +667,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp48Element <PARAMSIZE,N>{
         let mut naf_um1_repr:Option<Vec<i8>> = None;
         if use_naf {naf_u_repr   = Some(<i128 as Exponent<N>>::to_naf(&u));
                     naf_um1_repr = Some(<i128 as Exponent<N>>::to_naf(&um1));
-                   };
+                   }
 
              //  Soft Part of the exponentiation :f^((p^24-1)*(p^8+1))                  
         let mut s = self.conjugate().multiply(&self.invert());               
