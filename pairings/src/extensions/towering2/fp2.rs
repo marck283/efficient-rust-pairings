@@ -98,10 +98,62 @@ impl <const PARAMSIZE:usize,const N:usize> Fp2Element<PARAMSIZE, N>{
                                                     FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}],
                                                   constants :self.constants  };
         let rootdelta = self.content[0].sqr().substract(&self.content[1].sqr().multiply(&self.constants.base_qnr)).sqrt();
-        if rootdelta.is_some() {
+        match rootdelta {
+            None => None,
+            Some(rootdelta) => {
+                let mut t1 = self.content[0].addto(&rootdelta).multiply(&inv2);
+                let mut a = t1.sqrt();
+                let mut i = 0u8;
+
+                while a.is_none() && i < 2u8 {
+                    if i != 1u8 {
+                        t1 = t1.substract(&rootdelta);
+                    } else {
+                        t1 = t1.negate();
+                    }
+
+                    a = t1.sqrt();
+                    i = i + 1;
+                }
+                /*if a.is_none() { t1 = t1.substract(&rootdelta.unwrap());
+                                 a  = t1.sqrt();
+                                 if a.is_none(){ t1 = t1.negate();
+                                                 a  = t1.sqrt();
+                                                 if a.is_none(){ t1 = t1.substract(&rootdelta.unwrap());
+                                                                 a = t1.sqrt();
+                                                                }
+                                                }
+                               }*/
+                match a {
+                    None => None,
+                    Some(a) => {
+                        if a.equal(&FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}) {
+                            Some(zero)
+                        } else {
+                            Some(Self {
+                                content:[a, self.content[1].multiply(&a.addto(&a).invert())],
+                                constants :self.constants
+                            })
+                        }
+                    }
+                }
+                /*if a.is_none() { None }
+                else { if a.unwrap().equal(&FieldElement{mont_limbs:outparams.zero,fieldparams:outparams})
+                                {  Some(zero) }
+                       else {Some(Self{content:[a.unwrap(),
+                                                self.content[1].multiply(&a.unwrap().addto(&a.unwrap()).invert())],
+                                       constants :self.constants
+                                      }
+                                 )
+                            }
+                     }*/
+            }
+        }
+        /*if rootdelta.is_some() {
             let mut t1 = self.content[0].addto(&rootdelta.unwrap()).multiply(&inv2);
             let mut a = t1.sqrt();
-            if a.is_none() { t1 = t1.substract(&rootdelta.unwrap());                             
+
+            if a.is_none() { t1 = t1.substract(&rootdelta.unwrap());
                              a  = t1.sqrt();   
                              if a.is_none(){ t1 = t1.negate();
                                              a  = t1.sqrt();   
@@ -110,6 +162,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp2Element<PARAMSIZE, N>{
                                                             }
                                             }
                            }
+
             if a.is_none() { None }
             else { if a.unwrap().equal(&FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}) 
                             {  Some(zero) }
@@ -119,11 +172,12 @@ impl <const PARAMSIZE:usize,const N:usize> Fp2Element<PARAMSIZE, N>{
                                   }
                              )
                         } 
-                 }   
-            }
-            else { None }  
-        }
+                 }
+            } else {
+            None
+        }*/
     }
+}
     
 impl<const PARAMSIZE:usize,const N: usize> fmt::Display for Fp2Element<PARAMSIZE,N> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{:}", &self.to_a_string()) }
