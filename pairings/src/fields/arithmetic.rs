@@ -605,7 +605,7 @@ fn tonelli_shanks<const N: usize>(a:&[u64; N],_params :&super::prime_fields::Fie
     if !equal(&t, &_params.one) {
         return None
     }
-    loop  {
+    loop {
         let mut t= b.clone();
         let mut m= 0;
         while !equal(&t, &_params.one) {

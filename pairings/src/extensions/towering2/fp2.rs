@@ -45,8 +45,9 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,2,N> for Fp2Elem
         let v0 =self.content[0].multiply(&rhs.content[0]);
         let v1 =self.content[1].multiply(&rhs.content[1]);
         Self {content : [v0.addto(&v1.multiply(&self.constants.base_qnr)),
-            self.content[0].addto(&self.content[1]).multiply(
-                            &rhs.content[0].addto(&rhs.content[1])).substract(&v0).substract(&v1)
+            self.content[0].multiply(&rhs.content[1]).addto(&self.content[1].multiply(&rhs.content[0]))
+            /*self.content[0].addto(&self.content[1]).multiply(
+                            &rhs.content[0].addto(&rhs.content[1])).substract(&v0).substract(&v1)*/
                                     ],
               constants :self.constants}
     }

@@ -68,9 +68,12 @@ pub mod fp6 {
             let t0 = a0.multiply(&a1);
             let t1 = b0.multiply(&b1);
             let t2 = c0.multiply(&c1);
-            let x0 = b0.addto(&c0).multiply(&b1.addto(&c1)).substract(&t1).substract(&t2).mul_by_u_p_1().addto(&t0);
-            let x1 = a0.addto(&b0).multiply(&a1.addto(&b1)).substract(&t0).substract(&t1).addto(&t2.mul_by_u_p_1());
-            let x2 = a0.addto(&c0).multiply(&a1.addto(&c1)).substract(&t0).substract(&t2).addto(&t1);
+            //let x0 = b0.addto(&c0).multiply(&b1.addto(&c1)).substract(&t1).substract(&t2).mul_by_u_p_1().addto(&t0);
+            let x0 = b0.multiply(&c1).addto(&c0.multiply(&b1)).mul_by_u_p_1().addto(&t0);
+            //let x1 = a0.addto(&b0).multiply(&a1.addto(&b1)).substract(&t0).substract(&t1).addto(&t2.mul_by_u_p_1());
+            let x1 = a0.multiply(&b1).addto(&b0.multiply(&a1)).addto(&t2.mul_by_u_p_1());
+            //let x2 = a0.addto(&c0).multiply(&a1.addto(&c1)).substract(&t0).substract(&t2).addto(&t1);
+            let x2 = a0.multiply(&c1).addto(&c0.multiply(&a1)).addto(&t1);
 
             get_fp6_res(self, &x0, &x1, &x2)
         }
@@ -82,9 +85,12 @@ pub mod fp6 {
             let t0 = a.sqr();
             let t1 = b.sqr();
             let t2 = c.sqr();
-            let x0 = c.addto(&b).sqr().substract(&t1).substract(&t2).mul_by_u_p_1().addto(&t0);
-            let x1 = a.addto(&b).sqr().substract(&t0).substract(&t1).addto(&t2.mul_by_u_p_1());
-            let x2 = a.addto(&c).sqr().substract(&t0).substract(&t2).addto(&t1);
+            //let x0 = c.addto(&b).sqr().substract(&t1).substract(&t2).mul_by_u_p_1().addto(&t0);
+            let x0 = c.multiply(&b).double().mul_by_u_p_1().addto(&t0);
+            //let x1 = a.addto(&b).sqr().substract(&t0).substract(&t1).addto(&t2.mul_by_u_p_1());
+            let x1 = a.multiply(&b).double().addto(&t2.mul_by_u_p_1());
+            //let x2 = a.addto(&c).sqr().substract(&t0).substract(&t2).addto(&t1);
+            let x2 = a.multiply(&c).double().addto(&t1);
 
             get_fp6_res(self, &x0, &x1, &x2)
         }

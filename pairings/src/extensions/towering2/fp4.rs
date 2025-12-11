@@ -50,7 +50,8 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,4,N> for Fp4Elem
         let t0 = a0.multiply(&a1);
         let t1 = b0.multiply(&b1);
         let a  = t0.addto(&t1.mul_by_u());
-        let b  = a0.addto(&b0).multiply(&a1.addto(&b1)).substract(&t0).substract(&t1);
+        //let b  = a0.addto(&b0).multiply(&a1.addto(&b1)).substract(&t0).substract(&t1);
+        let b  = a0.multiply(&b1).addto(&b0.multiply(&a1));
         Self { content : [a.content[0],a.content[1],b.content[0],b.content[1]],
                constants :self.constants  }
     }
@@ -60,7 +61,8 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,4,N> for Fp4Elem
         let b = Fp2Element{content :[self.content[2],self.content[3]], constants:self.constants };
         let v0= a.sqr();
         let v1= b.sqr();
-        let b = a.addto(&b).sqr().substract(&v0).substract(&v1);
+        //let b = a.addto(&b).sqr().substract(&v0).substract(&v1);
+        let b = a.multiply(&b).double();
         let a = v0.addto(&v1.mul_by_u());
         Self { content : [a.content[0],a.content[1],b.content[0],b.content[1]],
                constants :self.constants  }

@@ -180,11 +180,11 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT :u
                 //  https://www.ietf.org/archive/id/draft-irtf-cfrg-pairing-friendly-curves-11.html#name-zcash-serialization-format-
                 let p = self.to_affine();
                 let c_bit: u8 = 1;
-                let i_bit: u8 = if p.point.z.is_zero() {1} else {0};
-                let s_bit: i8 = if p.point.z.is_zero() {0} else {if p.point.y.sign() == 1 {1} else {0}};   
+                let i_bit: u8 = p.point.z.is_zero() as u8;
+                let s_bit: i8 = if p.point.z.is_zero() {0} else {(p.point.y.sign() == 1) as i8};
                 let m_byte: u8 = (c_bit << 7) | (i_bit << 6) | (((s_bit + 1) as u8 >> 1) << 5);
                 let numbits = p.consts.base_field_numbits;                
-                let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};
+                let sizeinbytes = (numbits >> 3) + (((numbits % 8) != 0) as usize);
                 let mut x_string = if self.point.z.is_zero() {i2osp(0, sizeinbytes * self.getorder())}
                                             else {p.point.x.to_i2osp_bytearray()};
                 if self.consts.base_field_numbits % 8 <=5 {x_string[0] = x_string[0] | m_byte;}
@@ -356,7 +356,7 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT : 
                     let mut input = inbytes.clone();
                     let m_byte = input[0] & 0xE0;
                     let numbits = self.consts.base_field_numbits;
-                    let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};
+                    let sizeinbytes = (numbits >> 3) + (((numbits % 8) != 0) as usize);
                     if self.consts.base_field_numbits % 8 <=5 {input[0] = input[0] & 0x1F;}
                     else {input.remove(0);};
                     if m_byte == 0xE0 {panic!("Invalide compressed point format ...")};
@@ -377,8 +377,8 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT : 
                                    let y = x.sqr().multiply(&x).addto(&&self.consts.b).sqrt();
                                    if y.is_none() {panic!("Invalide point: not in the curve ...")}
                                    else { let y = y.unwrap();
-                                          let r_sign = if m_byte & 0x20 !=0 {1} else {0}; 
-                                          if (y.sign()+1) >> 1 == r_sign {G2Element {  point : EcPoint { x, y, z: self.base_field.one() },
+                                          let r_sign = (m_byte & 0x20 != 0) as i8;
+                                          if (y.sign() + 1) >> 1 == r_sign {G2Element {  point : EcPoint { x, y, z: self.base_field.one() },
                                                                                        consts :self.consts}  }
                                           else {G2Element {  point : EcPoint { x, y: y.negate(), z: self.base_field.one() },
                                                              consts :self.consts}  }

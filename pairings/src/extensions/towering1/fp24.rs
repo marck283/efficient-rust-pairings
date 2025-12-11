@@ -79,10 +79,13 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,24,N> for Fp24El
         let t0 = a0.multiply(&a1);
         let t1 = b0.multiply(&b1);
         let t2 = c0.multiply(&c1);
-        let h0 = b0.addto(&c0).multiply(&b1.addto(&c1)).substract(&t1).substract(&t2).mulby_w().addto(&t0);
-        let h1 = t2.mulby_w().addto(&a0.addto(&b0).multiply(&a1.addto(&b1)).substract(&t0).substract(&t1));
-        let h2 = a0.addto(&c0).multiply(&a1.addto(&c1)).substract(&t0).substract(&t2).addto(&t1);
-        let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
+        //let h0 = b0.addto(&c0).multiply(&b1.addto(&c1)).substract(&t1).substract(&t2).mulby_w().addto(&t0);
+        let h0 = b0.multiply(&c1).addto(&c0.multiply(&b1)).mulby_w().addto(&t0);
+        //let h1 = t2.mulby_w().addto(&a0.addto(&b0).multiply(&a1.addto(&b1)).substract(&t0).substract(&t1));
+        let h1 = t2.mulby_w().addto(&a0.multiply(&b1).addto(&b0.multiply(&a1)));
+        //let h2 = a0.addto(&c0).multiply(&a1.addto(&c1)).substract(&t0).substract(&t2).addto(&t1);
+        let h2 = a0.multiply(&c1).addto(&c0.multiply(&a1)).addto(&t1);
+        let mut result = [FieldElement {  mont_limbs:self.content[0].fieldparams.zero,
                                                                fieldparams:self.content[0].fieldparams};24];
         result[..8].copy_from_slice(&h0.content);
         result[8..16].copy_from_slice(&h1.content);
@@ -97,9 +100,12 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,24,N> for Fp24El
         let t0 = a.sqr();
         let t1 = b.sqr();
         let t2 = c.sqr();
-        let h0 = b.addto(&c).sqr().substract(&t1).substract(&t2).mulby_w().addto(&t0);
-        let h1 = t2.mulby_w().addto(&a.addto(&b).sqr().substract(&t0).substract(&t1));
-        let h2 = a.addto(&c).sqr().substract(&t0).substract(&t2).addto(&t1); 
+        //let h0 = b.addto(&c).sqr().substract(&t1).substract(&t2).mulby_w().addto(&t0);
+        let h0 = b.multiply(&c).double().mulby_w().addto(&t0);
+        //let h1 = t2.mulby_w().addto(&a.addto(&b).sqr().substract(&t0).substract(&t1));
+        let h1 = t2.mulby_w().addto(&a.multiply(&b).double());
+        //let h2 = a.addto(&c).sqr().substract(&t0).substract(&t2).addto(&t1);
+        let h2 = a.multiply(&c).double().addto(&t1);
         let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
                                                                fieldparams:self.content[0].fieldparams};24];
         result[..8].copy_from_slice(&h0.content);
@@ -233,19 +239,22 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
        let a5 =  get_slice_fp4(&self, 5);
        let t0 = a0.sqr();
        let t1 = a1.sqr();
-       let t2 = a0.addto(&a1).sqr();
+       //let t2 = a0.addto(&a1).sqr();
        let h00= t1.mulby_v().addto(&t0).mulbyu8(3u8).substract(&a0.addto(&a0));
-       let h01= t2.substract(&t0).substract(&t1).mulbyu8(3u8).addto(&a1.addto(&a1));
+       //let h01= t2.substract(&t0).substract(&t1).mulbyu8(3u8).addto(&a1.addto(&a1));
+       let h01= a0.multiply(&a1).double().mulbyu8(3u8).addto(&a1.addto(&a1));
        let t0 = a4.sqr();
        let t1 = a5.sqr();
-       let t2 = a4.addto(&a5).sqr();
-       let h10= t2.substract(&t0).substract(&t1).mulby_v().mulbyu8(3u8).addto(&a2.addto(&a2));
+       //let t2 = a4.addto(&a5).sqr();
+       //let h10= t2.substract(&t0).substract(&t1).mulby_v().mulbyu8(3u8).addto(&a2.addto(&a2));
+       let h10= a4.multiply(&a5).double().mulby_v().mulbyu8(3u8).addto(&a2.addto(&a2));
        let h11= t1.mulby_v().addto(&t0).mulbyu8(3u8).substract(&a3.addto(&a3));
        let t0 = a2.sqr();
        let t1 = a3.sqr();
-       let t2 = a2.addto(&a3).sqr();
+       //let t2 = a2.addto(&a3).sqr();
        let h20= t1.mulby_v().addto(&t0).mulbyu8(3u8).substract(&a4.addto(&a4));
-       let h21= t2.substract(&t0).substract(&t1).mulbyu8(3u8).addto(&a5.addto(&a5));
+       //let h21= t2.substract(&t0).substract(&t1).mulbyu8(3u8).addto(&a5.addto(&a5));
+       let h21= a2.multiply(&a3).double().mulbyu8(3u8).addto(&a5.addto(&a5));
        let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
                                                               fieldparams:self.content[0].fieldparams};24];
        result[..4].copy_from_slice(&h00.content);

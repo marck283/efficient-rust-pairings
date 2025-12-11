@@ -44,8 +44,9 @@ impl <const N:usize> ExtElement<0,2,N> for Fp2Element<N>{
         let v0 =self.content[0].multiply(&rhs.content[0]);
         let v1 =self.content[1].multiply(&rhs.content[1]);
         Self {content : [v0.substract(&v1),
-            self.content[0].addto(&self.content[1]).multiply(
-                            &rhs.content[0].addto(&rhs.content[1])).substract(&v0).substract(&v1)
+            self.content[0].multiply(&rhs.content[1]).addto(&self.content[1].multiply(&rhs.content[0]))
+            /*self.content[0].addto(&self.content[1]).multiply(
+                            &rhs.content[0].addto(&rhs.content[1])).substract(&v0).substract(&v1)*/
                                     ]}
     }
 

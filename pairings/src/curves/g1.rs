@@ -60,17 +60,13 @@ const BLOCKSIZE: usize = 1 << (WSIZE - 1);
 
 impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX_COEFS_COUNT> {
 
-            pub fn addto(&self, other: &G1Element<R,N,MAX_COEFS_COUNT>) -> G1Element<R,N,MAX_COEFS_COUNT>
+            pub fn addto(&mut self, other: &G1Element<R,N,MAX_COEFS_COUNT>)
             {
-                G1Element { point :self.point.add_jacobian(&other.point),
-                            consts : self.consts,
-                            }
+                self.point = self.point.add_jacobian(&other.point)
             }
-            pub fn substract(&self, other: &G1Element<R,N,MAX_COEFS_COUNT>) -> G1Element<R,N,MAX_COEFS_COUNT>
+            pub fn substract(&mut self, other: &G1Element<R,N,MAX_COEFS_COUNT>)
             {
-                G1Element { point :self.point.add_jacobian(&other.point.negate()),
-                            consts : self.consts,
-                            }
+                self.point = self.point.add_jacobian(&other.point.negate())
             }
             pub fn negate(&self) -> G1Element<R,N,MAX_COEFS_COUNT>
             {
@@ -105,7 +101,7 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                 }
             }
 
-            pub fn  glv_multiply(&self, scalar : &FieldElement<R>) -> G1Element<R,N,MAX_COEFS_COUNT>
+            pub fn glv_multiply(&self, scalar : &FieldElement<R>) -> G1Element<R,N,MAX_COEFS_COUNT>
             {   let s = scalar.to_big_uint();
                 if s.bits()<(scalar.fieldparams.num_of_bits /2).try_into().unwrap() {self.multiply(&scalar)}
                 else {  let _2p     = self.point.double_jacobian();
@@ -143,10 +139,12 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                                                         result.point = result.point.double_jacobian(); 
                                                         result.point = result.point.double_jacobian(); 
                                                         let tmp =  self.get_g1_element(&lookup, idx, fi);
-                                                        result.point = if sig == 1 {
-                                                            result.point.add_jacobian(&tmp.point)
+                                                        /*result.point = */if sig == 1 {
+                                                            result.addto(&tmp);
+                                                            //result.point.add_jacobian(&tmp.point)
                                                         } else {
-                                                            result.point.add_jacobian(&tmp.point.negate())
+                                                            result.substract(&tmp);
+                                                            //result.point.add_jacobian(&tmp.point.negate())
                                                         };
                                                         code = code >> WDSIZE;
                                                     }           
@@ -195,12 +193,16 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                 p.to_affine();
                 let c_bit: u8 = 1;
                 //let i_bit: u8 = if self.point.z.is_zero() {1} else {0};
-                let (i_bit, s_bit): (u8, i8) = if self.point.z.is_zero() {(1, 0)} else {(0, if self.point.y.sign()==1 {1} else {0})};
+                let (i_bit, s_bit): (u8, i8) = if self.point.z.is_zero() {
+                    (1, 0)
+                } else {
+                    (0, (self.point.y.sign() == 1) as i8)
+                };
                 //let s_bit: i8 = if self.point.z.is_zero() {0} else {if self.point.y.sign()==1 {1} else {0}};
-                //let m_byte: u8 = (c_bit << 7) | (i_bit << 6) | (((s_bit + 1) as u8 >> 1) << 5);
-                let m_byte: u8 = (c_bit << 7) | (i_bit << 6) | (((s_bit + 1) as u8) << 4);
+                let m_byte: u8 = (c_bit << 7) | (i_bit << 6) | (((s_bit + 1) as u8 >> 1) << 5); // Leave this last part here because it could be trying to make the value even
                 let numbits = self.point.x.fieldparams.num_of_bits;
-                let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};
+                //let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};
+                let sizeinbytes = (numbits >> 3) + (((numbits % 8) != 0) as usize);
                 let mut x_string = if self.point.z.is_zero() {i2osp(0, sizeinbytes)}
                                             else {i2osp_pf(&p.x, sizeinbytes)};
                 if self.consts.base_field_numbits % 8 <=5 {x_string[0] = x_string[0] | m_byte;}
@@ -224,9 +226,11 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
             //     Simplified Shallue-van de Woestijne-Ulas Method (Simplified SWU for AB == 0)
             //     https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-05#section-6.6.3
             //     https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-05#appendix-C.2            
-            let mut u = self.base_field.random_element();
+            let u: FieldElement<N>;
             if !seed.is_zero() {
                 u = seed
+            } else {
+                u = self.base_field.random_element()
             }
             let t1 = self.consts.swu_consts.z.multiply(&u.sqr());
             let mut t2 = t1.sqr();
@@ -309,11 +313,13 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
             //  mode=0: Encode to Curve (NU-encode-to-curve), mode=1: Random Oracle model (RO-hash-to-curve)
             //  https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-06#name-roadmap
             let hashs = self.base_field.hash_to_field(id,self.consts.security_level, 2);
-            if mode ==0 {self.random_point_withseed(hashs[0]).to_affine()
+            if mode ==0 {
+                self.random_point_withseed(hashs[0]).to_affine()
             } else {
-                let p1=self.random_point_withseed(hashs[0]);
+                let mut p1=self.random_point_withseed(hashs[0]);
                 let p2=self.random_point_withseed(hashs[1]);
-                p1.addto(&p2).to_affine()
+                p1.addto(&p2);
+                    p1.to_affine()
             }
         }
         
@@ -357,13 +363,9 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
                 }
             }
         }
+
         pub fn from_base64(&self,input :&str) -> G1Element<R,N,MAX_COEFS_COUNT> {
-            let decoded_bytes = match general_purpose::STANDARD.decode(input) {
-                Ok(bytes) => bytes,
-                Err(_) => {
-                    panic!("Failed to decode base64 string");
-                }
-            };
+            let decoded_bytes = general_purpose::STANDARD.decode(input).unwrap_or_else(|_| panic!("Failed to decode base64 string"));
             self.from_bytearray(&decoded_bytes)
         }
 
@@ -393,11 +395,19 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> fmt::Display for 
 
 impl  <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> Add for G1Element<R,N,MAX_COEFS_COUNT> {
         type Output =  G1Element<R,N,MAX_COEFS_COUNT>;
-            fn add(self, rhs: Self) -> Self::Output {   self.addto(&rhs) }
+            fn add(self, rhs: Self) -> Self::Output {
+                let mut res = self.clone();
+                res.addto(&rhs);
+                res
+            }
     }
 impl  <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> Sub for G1Element<R,N,MAX_COEFS_COUNT> {
         type Output =  G1Element<R,N,MAX_COEFS_COUNT>;
-            fn sub(self, rhs: Self) -> Self::Output {   self.substract(&rhs) }
+            fn sub(self, rhs: Self) -> Self::Output {
+                let mut res = self.clone();
+                res.substract(&rhs);
+                res
+            }
     }
 impl  <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> Neg for G1Element<R,N,MAX_COEFS_COUNT> {
         type Output =  G1Element<R,N,MAX_COEFS_COUNT>;

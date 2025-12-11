@@ -82,98 +82,127 @@ pub fn phi_bls24<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
         //    ExtFieldG2Element::Fp4_2(_) => {construction =2},
         //    _ => {unimplemented!("error handeling unsupported type ...")},
         //}
-        match order {   1 =>{   if construction ==1 {   let phix :[FieldElement<N>; 4];
-                                                        let phiy :[FieldElement<N>; 4];
-                                                        if input.consts.twist_type=='D'{  // D-Type Twiste
-                                                                    phix = [x[0].substract(&x[1]).multiply(&frobs[7]),x[0].addto(&x[1]).multiply(&frobs[7]).negate(),
-                                                                                                      x[2].multiply(&frobs[5].add(1u64)), x[3].multiply(&frobs[5].add(1u64)).negate()];
-                                                                    phiy = [y[2].multiply(&frobs[1]).negate(),y[3].multiply(&frobs[1]), 
-                                                                                                      y[1].multiply(&frobs[2]),y[0].multiply(&frobs[2])];
-                                                                        }
-                                                        else { // M-Type Twiste
-                                                               phix = [x[0].addto(&x[1]).multiply(&frobs[6]).negate(),x[0].substract(&x[1]).multiply(&frobs[6]).negate(),
-                                                                                                x[3].multiply(&frobs[5]), x[2].multiply(&frobs[5])];
-                                                               phiy = [y[3].substract(&y[2]).multiply(&frobs[2]),y[3].addto(&y[2]).multiply(&frobs[2]), 
-                                                                        y[0].addto(&y[1]).multiply(&frobs[10]),y[0].substract(&y[1]).multiply(&frobs[10])];
-                                                                        }        
-                                                        G2Element { consts: input.consts , 
-                                                                    point: EcPoint{ x: ExtFieldG2Element::Fp4_1(Fp4Element_1 { content: phix, constants: inconsts }), 
-                                                                                    y: ExtFieldG2Element::Fp4_1(Fp4Element_1 { content: phiy, constants: inconsts }), 
-                                                                                    z: ExtFieldG2Element::Fp4_1(Fp4Element_1 { content: z, constants: inconsts }.frobinus()) }
-                                                                 }}
-                                else {  let phix = [x[0].multiply(&frobs[7]) ,x[1].negate().multiply(&frobs[7]),x[2].multiply(&frobs[8]),
-                                                                            x[3].negate().multiply(&frobs[8])];
-                                        let phiy = [y[0].multiply(&frobs[1]) ,y[1].negate().multiply(&frobs[1]),y[2].multiply(&frobs[2]),
-                                                                            y[3].negate().multiply(&frobs[2])];                                   
-                                        G2Element { consts: input.consts , 
-                                                    point: EcPoint{ x: ExtFieldG2Element::Fp4_2(Fp4Element_2 { content: phix, constants: inconsts }), 
-                                                                    y: ExtFieldG2Element::Fp4_2(Fp4Element_2 { content: phiy, constants: inconsts }), 
-                                                                    z: ExtFieldG2Element::Fp4_2(Fp4Element_2 { content: z, constants: inconsts }.frobinus()) }
-                                                }}
-                                }
-                             
-                        4 => {  if construction ==1 {   let phi4x :[FieldElement<N>; 4];
-                                                        if input.consts.twist_type=='D'{  // D-Type Twiste
-                                                                        let fb5plus1 = frobs[5].add(1u64);          
-                                                                        phi4x = [x[0].negate().multiply(&fb5plus1),x[1].negate().multiply(&fb5plus1),
-                                                                                 x[2].negate().multiply(&fb5plus1), x[3].negate().multiply(&fb5plus1)];
-                                                                        }
-                                                        else {  // M-Type Twiste                                                     
-                                                                phi4x = [x[0].multiply(&frobs[5]),x[1].multiply(&frobs[5]),
-                                                                         x[2].multiply(&frobs[5]), x[3].multiply(&frobs[5])];
-                                                                }                                                                        
-                                                        G2Element { consts: input.consts , 
-                                                                  point: EcPoint{ x: ExtFieldG2Element::Fp4_1(Fp4Element_1 { content: phi4x, constants: inconsts }), 
-                                                                                  y: ExtFieldG2Element::Fp4_1(Fp4Element_1 { content: y, constants: inconsts }.negate()), 
-                                                                                  z: ExtFieldG2Element::Fp4_1(Fp4Element_1 { content: z, constants: inconsts }) }
-                                                                    }
-                                                    }
-                                else {  let phi4x = [x[0].multiply(&frobs[8]) ,x[1].multiply(&frobs[8]),x[2].multiply(&frobs[8]),
-                                                                            x[3].multiply(&frobs[8])];
-                                        G2Element { consts: input.consts , 
-                                                    point: EcPoint{ x: ExtFieldG2Element::Fp4_2(Fp4Element_2 { content: phi4x, constants: inconsts }), 
-                                                                    y: ExtFieldG2Element::Fp4_2(Fp4Element_2 { content: y, constants: inconsts }.negate()), 
-                                                                    z: ExtFieldG2Element::Fp4_2(Fp4Element_2 { content: z, constants: inconsts }) }
-                                                    }
-                                }                                    
-                              }    
-                        -1 =>{  if construction ==1 {   let phix :[FieldElement<N>; 4];
-                                                        let phiy :[FieldElement<N>; 4];
-                                                        if input.consts.twist_type=='D'{  // D-Type Twiste
-                                                                                        phix = [x[1].substract(&x[0]).multiply(&frobs[6]),x[0].addto(&x[1]).multiply(&frobs[6]),
-                                                                                                                    x[2].multiply(&frobs[5]).negate(), x[3].multiply(&frobs[5])];
-                                                                                        phiy = [y[3].multiply(&frobs[1]), y[2].multiply(&frobs[1]), 
-                                                                                                                    y[0].multiply(&frobs[2]).negate(),y[1].multiply(&frobs[2])];
-                                                                                        }
-                                                        else {// M-Type Twiste                                                              
-                                                                let fb5plus1 = frobs[5].add(1u64);          
-                                                                phix = [x[1].addto(&x[0]).multiply(&frobs[7]),x[0].substract(&x[1]).multiply(&frobs[7]),
-                                                                                            x[3].multiply(&fb5plus1).negate(), x[2].multiply(&fb5plus1).negate()];
-                                                                phiy = [y[2].addto(&y[3]).multiply(&frobs[2]).negate(), y[3].substract(&y[2]).multiply(&frobs[2]), 
-                                                                        y[0].substract(&y[1]).multiply(&frobs[10]),y[0].addto(&y[1]).multiply(&frobs[10]).negate()];
-                                                                }                                                                                        
-                                                        G2Element { consts: input.consts , 
-                                                                    point: EcPoint{ x: ExtFieldG2Element::Fp4_1(Fp4Element_1 { content: phix, constants: inconsts }), 
-                                                                                    y: ExtFieldG2Element::Fp4_1(Fp4Element_1 { content: phiy, constants: inconsts }), 
-                                                                                    z: ExtFieldG2Element::Fp4_1(Fp4Element_1 { content: z, constants: inconsts }.frobinus().conjugate()) //invert of the frobinus is its conjugate//
-                                                                                }
-                                                                    }
-                                                    }
-                                else {  let phix = [x[0].multiply(&frobs[6]).negate(),x[1].multiply(&frobs[6]),
-                                                                            x[2].multiply(&frobs[5]).negate(), x[3].multiply(&frobs[5])];
-                                        let phiy = [y[0].multiply(&frobs[2]).negate(), y[1].multiply(&frobs[2]), 
-                                                                            y[2].multiply(&frobs[1]).negate(),y[3].multiply(&frobs[1])];
-                                        G2Element { consts: input.consts , 
-                                                    point: EcPoint{ x: ExtFieldG2Element::Fp4_2(Fp4Element_2 { content: phix, constants: inconsts }), 
-                                                                    y: ExtFieldG2Element::Fp4_2(Fp4Element_2 { content: phiy, constants: inconsts }), 
-                                                                    z: ExtFieldG2Element::Fp4_2(Fp4Element_2 { content: z, constants: inconsts }.frobinus().conjugate()) //invert of the frobinus is its conjugate//
-                                                                }
-                                                    }
-                                     }
-                             }
-                        _ => {panic!("non-implemented order for EFp4 phi ...")}
+        match order {
+            1 => {
+                if construction == 1 {
+                    let phix: [FieldElement<N>; 4];
+                    let phiy: [FieldElement<N>; 4];
+                    if input.consts.twist_type == 'D' {
+                        // D-Type Twiste
+                        phix = [x[0].substract(&x[1]).multiply(&frobs[7]),x[0].addto(&x[1]).multiply(&frobs[7]).negate(),
+                            x[2].multiply(&frobs[5].add(1u64)), x[3].multiply(&frobs[5].add(1u64)).negate()];
+                        phiy = [y[2].multiply(&frobs[1]).negate(),y[3].multiply(&frobs[1]),
+                            y[1].multiply(&frobs[2]),y[0].multiply(&frobs[2])];
+                    } else {
+                        // M-Type Twiste
+                        phix = [x[0].addto(&x[1]).multiply(&frobs[6]).negate(),x[0].substract(&x[1]).multiply(&frobs[6]).negate(),
+                            x[3].multiply(&frobs[5]), x[2].multiply(&frobs[5])];
+                        phiy = [y[3].substract(&y[2]).multiply(&frobs[2]),y[3].addto(&y[2]).multiply(&frobs[2]),
+                            y[0].addto(&y[1]).multiply(&frobs[10]),y[0].substract(&y[1]).multiply(&frobs[10])];
+                    }
+                    G2Element {
+                        consts: input.consts,
+                        point: EcPoint {
+                            x: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phix, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phiy, Some(inconsts))),
+                            z: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&z, Some(inconsts)).frobinus())
                         }
                     }
+                } else {
+                    let phix = [x[0].multiply(&frobs[7]) ,x[1].negate().multiply(&frobs[7]),x[2].multiply(&frobs[8]),
+                        x[3].negate().multiply(&frobs[8])];
+                    let phiy = [y[0].multiply(&frobs[1]) ,y[1].negate().multiply(&frobs[1]),y[2].multiply(&frobs[2]),
+                        y[3].negate().multiply(&frobs[2])];
+                    G2Element {
+                        consts: input.consts,
+                        point: EcPoint {
+                            x: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phix, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phiy, Some(inconsts))),
+                            z: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&z, Some(inconsts)).frobinus())
+                        }
+                    }
+                }
+            }
+            4 => {
+                if construction == 1 {
+                    let phi4x: [FieldElement<N>; 4];
+                    if input.consts.twist_type == 'D' {
+                        // D-Type Twiste
+                        let fb5plus1 = frobs[5].add(1u64);
+                        phi4x = [x[0].negate().multiply(&fb5plus1),x[1].negate().multiply(&fb5plus1),
+                            x[2].negate().multiply(&fb5plus1), x[3].negate().multiply(&fb5plus1)];
+                    } else {
+                        // M-Type Twiste
+                        phi4x = [x[0].multiply(&frobs[5]),x[1].multiply(&frobs[5]),
+                            x[2].multiply(&frobs[5]), x[3].multiply(&frobs[5])];
+                    }
+                    G2Element {
+                        consts: input.consts,
+                        point: EcPoint {
+                            x: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phi4x, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&y, Some(inconsts)).negate()),
+                            z: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&z, Some(inconsts)))
+                        }
+                    }
+                } else {
+                    let phi4x = [x[0].multiply(&frobs[8]) ,x[1].multiply(&frobs[8]),x[2].multiply(&frobs[8]),
+                        x[3].multiply(&frobs[8])];
+                    G2Element {
+                        consts: input.consts,
+                        point: EcPoint {
+                            x: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phi4x, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&y, Some(inconsts)).negate()),
+                            z: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&z, Some(inconsts)))
+                        }
+                    }
+                }
+            }
+            -1 => {
+                if construction == 1 {
+                    let phix: [FieldElement<N>; 4];
+                    let phiy: [FieldElement<N>; 4];
+                    if input.consts.twist_type == 'D' {
+                        // D-Type Twiste
+                        phix = [x[1].substract(&x[0]).multiply(&frobs[6]),x[0].addto(&x[1]).multiply(&frobs[6]),
+                            x[2].multiply(&frobs[5]).negate(), x[3].multiply(&frobs[5])];
+                        phiy = [y[3].multiply(&frobs[1]), y[2].multiply(&frobs[1]),
+                            y[0].multiply(&frobs[2]).negate(),y[1].multiply(&frobs[2])];
+                    } else {
+                        // M-Type Twiste
+                        let fb5plus1 = frobs[5].add(1u64);
+                        phix = [x[1].addto(&x[0]).multiply(&frobs[7]),x[0].substract(&x[1]).multiply(&frobs[7]),
+                            x[3].multiply(&fb5plus1).negate(), x[2].multiply(&fb5plus1).negate()];
+                        phiy = [y[2].addto(&y[3]).multiply(&frobs[2]).negate(), y[3].substract(&y[2]).multiply(&frobs[2]),
+                            y[0].substract(&y[1]).multiply(&frobs[10]),y[0].addto(&y[1]).multiply(&frobs[10]).negate()];
+                    }
+                    G2Element {
+                        consts: input.consts,
+                        point: EcPoint {
+                            x: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phix, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phiy, Some(inconsts))),
+                            z: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&z, Some(inconsts)).frobinus().conjugate()) //invert of the frobinus is its conjugate//
+                        }
+                    }
+                } else {
+                    let phix = [x[0].multiply(&frobs[6]).negate(),x[1].multiply(&frobs[6]),
+                        x[2].multiply(&frobs[5]).negate(), x[3].multiply(&frobs[5])];
+                    let phiy = [y[0].multiply(&frobs[2]).negate(), y[1].multiply(&frobs[2]),
+                        y[2].multiply(&frobs[1]).negate(),y[3].multiply(&frobs[1])];
+                    G2Element {
+                        consts: input.consts,
+                        point: EcPoint {
+                            x: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phix, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phiy, Some(inconsts))),
+                            z: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&z, Some(inconsts)).frobinus().conjugate()) //invert of the frobinus is its conjugate//
+                        }
+                    }
+                }
+            }
+            _ => {
+                panic!("non-implemented order for EFp4 phi ...")
+            }
+        }
+    }
 
 pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX_COEFS_COUNT: usize>
             (input :&G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT> , order: i8) -> G2Element<PRAMASIZE, R,N,MAX_COEFS_COUNT>
@@ -245,17 +274,9 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                 G2Element {
                     consts: input.consts,
                     point: EcPoint {
-                        x: ExtFieldG2Element::Fp8_1(Fp8Element_1 {
-                            content: phix,
-                            constants: inconsts }),
-                        y: ExtFieldG2Element::Fp8_1(Fp8Element_1 {
-                            content: phiy,
-                            constants: inconsts
-                        }),
-                        z: ExtFieldG2Element::Fp8_1(Fp8Element_1 {
-                            content: z,
-                            constants: inconsts
-                        }.frobinus())
+                        x: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phix, Some(inconsts))),
+                        y: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phiy, Some(inconsts))),
+                        z: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&z, Some(inconsts)).frobinus())
                     }
                 }
             } else {
@@ -291,18 +312,9 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     G2Element {
                         consts: input.consts,
                         point: EcPoint {
-                            x: ExtFieldG2Element::Fp8_3(Fp8Element_3 {
-                                content: phix,
-                                constants: inconsts
-                            }),
-                            y: ExtFieldG2Element::Fp8_3(Fp8Element_3 {
-                                content: phiy,
-                                constants: inconsts
-                            }),
-                            z: ExtFieldG2Element::Fp8_3(Fp8Element_3 {
-                                content: z,
-                                constants: inconsts
-                            }.frobinus())
+                            x: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phix, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phiy, Some(inconsts))),
+                            z: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&z, Some(inconsts)).frobinus())
                         }
                     }
                 } else {
@@ -332,18 +344,9 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     G2Element {
                         consts: input.consts,
                         point: EcPoint {
-                            x: ExtFieldG2Element::Fp8_2(Fp8Element_2 {
-                                content: phix,
-                                constants: inconsts
-                            }),
-                            y: ExtFieldG2Element::Fp8_2(Fp8Element_2 {
-                                content: phiy,
-                                constants: inconsts
-                            }),
-                            z: ExtFieldG2Element::Fp8_2(Fp8Element_2 {
-                                content: z,
-                                constants: inconsts
-                            }.frobinus())
+                            x: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phix, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phiy, Some(inconsts))),
+                            z: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&z, Some(inconsts)).frobinus())
                         }
                     }
                 }
@@ -361,18 +364,9 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                 G2Element {
                     consts: input.consts,
                     point: EcPoint {
-                        x: ExtFieldG2Element::Fp8_1(Fp8Element_1 {
-                            content: phi4x,
-                            constants: inconsts
-                        }),
-                        y: ExtFieldG2Element::Fp8_1(Fp8Element_1 {
-                            content: phi4y,
-                            constants: inconsts
-                        }),
-                        z: ExtFieldG2Element::Fp8_1(Fp8Element_1 {
-                            content: z,
-                            constants: inconsts
-                        }.conjugate())
+                        x: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phi4x, Some(inconsts))),
+                        y: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phi4y, Some(inconsts))),
+                        z: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&z, Some(inconsts)).conjugate())
                     } // frobinus at order 4 for an Fp8 is simply the conjugate
                 }
             } else {
@@ -402,18 +396,9 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     G2Element {
                         consts: input.consts,
                         point: EcPoint {
-                            x: ExtFieldG2Element::Fp8_3(Fp8Element_3 {
-                                content: phix4,
-                                constants: inconsts
-                            }),
-                            y: ExtFieldG2Element::Fp8_3(Fp8Element_3 {
-                                content: phiy4,
-                                constants: inconsts
-                            }),
-                            z: ExtFieldG2Element::Fp8_3(Fp8Element_3 {
-                                content: z,
-                                constants: inconsts
-                            }.conjugate())
+                            x: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phix4, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phiy4, Some(inconsts))),
+                            z: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&z, Some(inconsts)).conjugate())
                         }
                     }
                 } else {
@@ -442,18 +427,9 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     G2Element {
                         consts: input.consts,
                         point: EcPoint {
-                            x: ExtFieldG2Element::Fp8_2(Fp8Element_2 {
-                                content: phix4,
-                                constants: inconsts
-                            }),
-                            y: ExtFieldG2Element::Fp8_2(Fp8Element_2 {
-                                content: phiy4,
-                                constants: inconsts
-                            }),
-                            z: ExtFieldG2Element::Fp8_2(Fp8Element_2 {
-                                content: z,
-                                constants: inconsts
-                            }.conjugate())
+                            x: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phix4, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phiy4, Some(inconsts))),
+                            z: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&z, Some(inconsts)).conjugate())
                         } // frobinus at order 4 for an Fp8 is simply the conjugate
                     }
                 }
@@ -468,18 +444,9 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                 G2Element {
                     consts: input.consts,
                     point: EcPoint {
-                        x: ExtFieldG2Element::Fp8_1(Fp8Element_1 {
-                            content: phi8x,
-                            constants: inconsts
-                        }),
-                        y: ExtFieldG2Element::Fp8_1(Fp8Element_1 {
-                            content: y,
-                            constants: inconsts
-                        }.negate()),
-                        z: ExtFieldG2Element::Fp8_1(Fp8Element_1 {
-                            content: z,
-                            constants: inconsts
-                        })
+                        x: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phi8x, Some(inconsts))),
+                        y: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&y, Some(inconsts)).negate()),
+                        z: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&z, Some(inconsts)))
                     } // frobinus at order 4 for an Fp8 is simply the identity
                 }
             } else {
@@ -503,18 +470,9 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     G2Element {
                         consts: input.consts,
                         point: EcPoint {
-                            x: ExtFieldG2Element::Fp8_3(Fp8Element_3 {
-                                content: phix8,
-                                constants: inconsts
-                            }),
-                            y: ExtFieldG2Element::Fp8_3(Fp8Element_3 {
-                                content: y,
-                                constants: inconsts
-                            }.negate()),
-                            z: ExtFieldG2Element::Fp8_3(Fp8Element_3 {
-                                content: z,
-                                constants: inconsts
-                            })
+                            x: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phix8, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&y, Some(inconsts)).negate()),
+                            z: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&z, Some(inconsts)))
                         }
                     }
                 } else {
@@ -535,18 +493,9 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     G2Element {
                         consts: input.consts,
                         point: EcPoint {
-                            x: ExtFieldG2Element::Fp8_2(Fp8Element_2 {
-                                content: phix8,
-                                constants: inconsts
-                            }),
-                            y: ExtFieldG2Element::Fp8_2(Fp8Element_2 {
-                                content: y,
-                                constants: inconsts
-                            }.negate()),
-                            z: ExtFieldG2Element::Fp8_2(Fp8Element_2 {
-                                content: z,
-                                constants: inconsts
-                            })
+                            x: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phix8, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&y, Some(inconsts)).negate()),
+                            z: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&z, Some(inconsts)))
                         } // frobinus at order 4 for an Fp8 is simply the identity
                     }
                 }
@@ -569,18 +518,9 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                 G2Element {
                     consts: input.consts,
                     point: EcPoint {
-                        x: ExtFieldG2Element::Fp8_1(Fp8Element_1 {
-                            content: invphix,
-                            constants: inconsts
-                        }),
-                        y: ExtFieldG2Element::Fp8_1(Fp8Element_1 {
-                            content: invphiy,
-                            constants: inconsts
-                        }),
-                        z: ExtFieldG2Element::Fp8_1(Fp8Element_1 {
-                            content: invphiz,
-                            constants: inconsts
-                        })
+                        x: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&invphix, Some(inconsts))),
+                        y: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&invphiy, Some(inconsts))),
+                        z: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&invphiz, Some(inconsts)))
                     }
                 }
             } else {
@@ -628,18 +568,9 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     G2Element {
                         consts: input.consts,
                         point: EcPoint {
-                            x: ExtFieldG2Element::Fp8_3(Fp8Element_3 {
-                                content: invphix,
-                                constants: inconsts
-                            }),
-                            y: ExtFieldG2Element::Fp8_3(Fp8Element_3 {
-                                content: invphiy,
-                                constants: inconsts
-                            }),
-                            z: ExtFieldG2Element::Fp8_3(Fp8Element_3 {
-                                content: invphiz,
-                                constants: inconsts
-                            })
+                            x: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&invphix, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&invphiy, Some(inconsts))),
+                            z: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&invphiz, Some(inconsts))),
                         }
                     }
                 } else {
@@ -676,18 +607,9 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     G2Element {
                         consts: input.consts,
                         point: EcPoint {
-                            x: ExtFieldG2Element::Fp8_2(Fp8Element_2 {
-                                content: invphix,
-                                constants: inconsts
-                            }),
-                            y: ExtFieldG2Element::Fp8_2(Fp8Element_2 {
-                                content: invphiy,
-                                constants: inconsts
-                            }),
-                            z: ExtFieldG2Element::Fp8_2(Fp8Element_2 {
-                                content: invphiz,
-                                constants: inconsts
-                            })
+                            x: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&invphix, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&invphiy, Some(inconsts))),
+                            z: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&invphiz, Some(inconsts)))
                         }
                     }
                 }

@@ -50,17 +50,19 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,4,N> for Fp4Elem
         let t0 = a0.multiply(&a1);
         let t1 = b0.multiply(&b1);
         let a  = t0.addto(&t1.mul_by_u_p_1().negate());
-        let b  = a0.addto(&b0).multiply(&a1.addto(&b1)).substract(&t0).substract(&t1);
+        //let b  = a0.addto(&b0).multiply(&a1.addto(&b1)).substract(&t0).substract(&t1);
+        let b  = a0.multiply(&b1).addto(&b0.multiply(&a1));
         Self { content : [a.content[0],a.content[1],b.content[0],b.content[1]],
                constants :self.constants  }
     }
 
     fn sqr(&self) -> Self {
-        let a = Fp2Element{content :[self.content[0],self.content[1]] };
-        let b = Fp2Element{content :[self.content[2],self.content[3]] };
-        let v0= a.sqr();
-        let v1= b.sqr();
-        let b = a.addto(&b).sqr().substract(&v0).substract(&v1);
+        let a0 = Fp2Element{content :[self.content[0],self.content[1]] };
+        let b0 = Fp2Element{content :[self.content[2],self.content[3]] };
+        let v0 = a0.sqr();
+        let v1= b0.sqr();
+        //let b = a0.addto(&b0).sqr().substract(&v0).substract(&v1);
+        let b = a0.multiply(&b0).double();
         let a = v0.addto(&v1.mul_by_u_p_1().negate());
         Self { content : [a.content[0],a.content[1],b.content[0],b.content[1]],
                constants :self.constants  }
@@ -100,7 +102,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp4Element <PARAMSIZE,N>{
         let a = Fp2Element{content :[self.content[0],self.content[1]] };
         let b = Fp2Element{content :[self.content[2],self.content[3]] };
         a.sqr().substract(&b.sqr().mul_by_u_p_1().negate()).is_qr()
-        }
+    }
 
     pub fn sqrt(&self) -> Option<Self>{
         let outparams = self.content[0].fieldparams;

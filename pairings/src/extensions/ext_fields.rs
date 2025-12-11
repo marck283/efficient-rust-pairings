@@ -97,7 +97,8 @@ pub trait  ExtField<const PARAMSIZE:usize,const ORDER :usize, const N:usize>
             let (field, consts) = self.get_field_consts_pair();
             //let field = self.field_interface();
             let numbits = field.parametres.num_of_bits;                
-            let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1}; 
+            //let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};
+            let sizeinbytes = (numbits >> 3) + (((numbits % 8) != 0) as usize);
             if sizeinbytes*ORDER != source.len() {
                 panic!("Size of input does not correspond to the field's extension ...");
             }
@@ -272,7 +273,7 @@ pub trait ExtElement<const PARAMSIZE:usize,const ORDER :usize, const N:usize>{
         let mut out= Vec::<u8>::new();
         let _a = self.content_interface();
         let numbits = _a[0].fieldparams.num_of_bits;
-        let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};
+        let sizeinbytes = (numbits >> 3) + (((numbits % 8) != 0) as usize);
         for i in 0..ORDER {
             out.extend(i2osp_pf(&_a[i], sizeinbytes));
         }

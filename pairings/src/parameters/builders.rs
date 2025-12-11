@@ -13,7 +13,7 @@ use crate::tools::arithmetic_interface::ArithmeticOperations;
 use super::paramlist::CurveParams;
 use crate::{extensions::ext_fields::ExFieldConsts, fields::prime_fields::PrimeField};
 
-pub fn build_field_params<'a, const NUMLIMBS:usize>(inputfield : &str) -> FieldParams<NUMLIMBS>
+pub fn build_field_params<const NUMLIMBS:usize>(inputfield : &'_ str) -> FieldParams<'_, NUMLIMBS>
             {   
                 fn mod_inverse(a: &BigInt, m: &BigInt) -> Option<BigInt> {  // Extended Euclidean Algorithm for finding modular inverse
                     let (mut old_r, mut r) = (a.clone(), m.clone());

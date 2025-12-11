@@ -54,24 +54,26 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,8,N> for Fp8Elem
                                                            rhs.content[7]], constants:rhs.constants};
         let t0 = a0.multiply(&a1);
         let t1 = b0.multiply(&b1);
-        let t2 = a0.addto(&b0).multiply(&a1.addto(&b1));
+        //let t2 = a0.addto(&b0).multiply(&a1.addto(&b1));
         let a  = t1.mulby_v().negate().addto(&t0);
-        let b  = t2.substract(&t0).substract(&t1);
+        //let b  = t2.substract(&t0).substract(&t1);
+        let b  = a0.multiply(&b1).addto(&b0.multiply(&a1));
         Self {  content : [ a.content[0], a.content[1], a.content[2], a.content[3],
                             b.content[0], b.content[1], b.content[2], b.content[3]],
                 constants : self.constants }
     }
 
     fn sqr(&self) -> Self {
-        let a = Fp4Element{ content : [ self.content[0],self.content[1],self.content[2], 
+        let a0 = Fp4Element{ content : [ self.content[0],self.content[1],self.content[2],
                                                           self.content[3]], constants:self.constants} ;
-        let b = Fp4Element{ content : [ self.content[4],self.content[5],self.content[6],
+        let b0 = Fp4Element{ content : [ self.content[4],self.content[5],self.content[6],
                                                           self.content[7]], constants:self.constants};                                                       
-        let t0= a.sqr();
-        let t1= b.sqr();      
-        let t2= a.addto(&b).sqr();  
+        let t0 = a0.sqr();
+        let t1 = b0.sqr();
+        //let t2 = a0.addto(&b0).sqr();
         let a = t1.mulby_v().negate().addto(&t0);
-        let b = t2.substract(&t0).substract(&t1);
+        //let b = t2.substract(&t0).substract(&t1);
+        let b = a0.multiply(&b0).double();
         Self {  content : [ a.content[0], a.content[1], a.content[2], a.content[3],
                             b.content[0], b.content[1], b.content[2], b.content[3]],
                 constants : self.constants }                                             
@@ -169,7 +171,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp8Element <PARAMSIZE,N>{
                         } 
                  }   
             }
-            else { None }  //Never occure ...
+            else { None }  //Never occurs ...
         }
         
     pub fn mulby_w(&self) -> Self {

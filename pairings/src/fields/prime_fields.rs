@@ -112,11 +112,11 @@ impl <'a, const N:usize> PrimeField<N> {
             else {Self::from_bigint(&self,&BigInt::from_str_radix(&strin,16).unwrap())}
         }
 
-    pub fn from_byte_array(&self, source :&[u8], repre:Endianness) -> FieldElement<N>{
+    pub fn from_byte_array(&self, source :&[u8], repre:Endianness) -> FieldElement<N> {
             let mut _source = source.to_vec();
             if repre == Endianness::Big { _source.reverse();}
             let numbits = self.parametres.num_of_bits;                
-            let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1}; 
+            let sizeinbytes = (numbits >> 3) + (((numbits % 8) != 0) as usize);
             if sizeinbytes != _source.len() {panic!("Size of input does not correspond to the field's extension ...");}                   
             Self::from_bigint(&self,&os2ip(&_source).to_bigint().unwrap())
         }                   
@@ -188,8 +188,8 @@ impl  <'a, const N:usize> FieldElement<N>  {
 
     pub fn to_i2osp_bytearray(&self) -> Vec<u8>
     {  let mut out= Vec::<u8>::new();
-       let numbits = self.fieldparams.num_of_bits;                
-       let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};     
+       let numbits = self.fieldparams.num_of_bits;
+       let sizeinbytes = (numbits >> 3) + (((numbits % 8) != 0) as usize);
        out.extend(i2osp_pf(&self, sizeinbytes));      
        out 
     }
