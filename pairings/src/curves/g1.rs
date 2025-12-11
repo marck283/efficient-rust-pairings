@@ -319,7 +319,7 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
                 let mut p1=self.random_point_withseed(hashs[0]);
                 let p2=self.random_point_withseed(hashs[1]);
                 p1.addto(&p2);
-                    p1.to_affine()
+                p1.to_affine()
             }
         }
         
@@ -342,25 +342,25 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
                 panic!("Invalid compressed point format ...")
             }
 
-            if m_byte & 0x40 !=0 {
+            if m_byte & 0x40 != 0 {
                 self.get_g1_element(&self.base_field.one(), &self.base_field.one(), &self.base_field.zero(), self.consts)
             } else {
                 let x = self.base_field.from_bigint(&os2ip(&input[0..sizeinbytes]).to_bigint().unwrap());
-                if input.len() == sizeinbytes*2 {
-                    let y = self.base_field.from_bigint(&os2ip(&input[sizeinbytes..]).to_bigint().unwrap());
+                let y: FieldElement<N>;
 
-                    self.get_g1_element(&x, &y, &self.base_field.one(), self.consts)
+                if input.len() == sizeinbytes*2 {
+                    y = self.base_field.from_bigint(&os2ip(&input[sizeinbytes..]).to_bigint().unwrap());
                 } else {
-                    let y = x.sqr().multiply(&x).addto(&&self.consts.b).sqrt().
+                    y = x.sqr().multiply(&x).addto(&&self.consts.b).sqrt().
                         unwrap_or_else(|| panic!("Invalid compressed point format ..."));
 
                     let r_sign = (m_byte & 0x20 != 0) as i8; // "1" if the condition is true, "0" otherwise
-                    if (y.sign() + 1) >> 1 == r_sign {
-                        self.get_g1_element(&x, &y, &self.base_field.one(), self.consts)
-                    } else {
-                        self.get_g1_element(&x, &y.negate(), &self.base_field.one(), self.consts)
+                    if (y.sign() + 1) >> 1 != r_sign {
+                        return self.get_g1_element(&x, &y.negate(), &self.base_field.one(), self.consts)
                     }
                 }
+
+                self.get_g1_element(&x, &y, &self.base_field.one(), self.consts)
             }
         }
 
