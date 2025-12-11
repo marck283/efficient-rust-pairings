@@ -287,17 +287,21 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT : 
                 for i in 1..MAX_COEFS_COUNT{ pow_x[i]  = pow_x[i-1].multiply(&x);
                                                     pow_z2[i] = pow_z2[i-1].multiply(&d2); 
                                                   }
-                for i in 0..MAX_COEFS_COUNT{ pow_x_z2[i] = pow_x[i].multiply(&pow_z2[MAX_COEFS_COUNT - i - 1]);}
+                for i in 0..MAX_COEFS_COUNT {
+                    pow_x_z2[i] = pow_x[i].multiply(&pow_z2[MAX_COEFS_COUNT - i - 1]);
+                }
+
                 let mut xnum = x.zero();
                 let mut xden = x.zero();
                 let mut ynum = x.zero();
                 let mut yden = x.zero();
                 for i in 0..MAX_COEFS_COUNT {
-                                ynum = ynum.addto(&self.consts.swu_consts.ynum[i].multiply(&pow_x_z2[i]));
-                                yden = yden.addto(&self.consts.swu_consts.yden[i].multiply(&pow_x_z2[i]));
-                                xnum = xnum.addto(&self.consts.swu_consts.xnum[i].multiply(&pow_x_z2[i]));
-                                xden = xden.addto(&self.consts.swu_consts.xden[i].multiply(&pow_x_z2[i]));
-                                }             
+                    ynum = ynum.addto(&self.consts.swu_consts.ynum[i].multiply(&pow_x_z2[i]));
+                    yden = yden.addto(&self.consts.swu_consts.yden[i].multiply(&pow_x_z2[i]));
+                    xnum = xnum.addto(&self.consts.swu_consts.xnum[i].multiply(&pow_x_z2[i]));
+                    xden = xden.addto(&self.consts.swu_consts.xden[i].multiply(&pow_x_z2[i]));
+                }
+
                 // Convert from affine coordinates to Jacobian coordinates
                 yden = yden.multiply(&d3); 
                 let z = xden.multiply(&yden);
@@ -359,32 +363,97 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT : 
                     let sizeinbytes = (numbits >> 3) + (((numbits % 8) != 0) as usize);
                     if self.consts.base_field_numbits % 8 <=5 {input[0] = input[0] & 0x1F;}
                     else {input.remove(0);};
-                    if m_byte == 0xE0 {panic!("Invalide compressed point format ...")};
-                    if m_byte & 0x80 !=0 { if input.len() != sizeinbytes * self.getorder() {panic!("Invalide compressed point format ...")} 
-                                         }
-                    else {if input.len() != (sizeinbytes * 2 * self.getorder()) {panic!("Invalide compressed point format ...")}}
-                    if m_byte & 0x40 !=0 { if input.iter().any(|&e| e != 0) {panic!("Invalid compression of an infinity point...");} 
-                                           else {G2Element {  point : EcPoint {x:self.base_field.one(), y : self.base_field.one(), z: self.base_field.zero() },
-                                                              consts :self.consts}
-                                                } 
-                                         }
-                    else {  if input.len() == (sizeinbytes * 2 * self.getorder()){ let x = self.base_field.from_i2osp_bytearray(&input[0..sizeinbytes * self.getorder()]);
-                                                               let y = self.base_field.from_i2osp_bytearray(&input[sizeinbytes * self.getorder()..]);
-                                                               G2Element {  point : EcPoint { x, y, z: self.base_field.one() },
-                                                               consts :self.consts}  
-                                                             }
-                            else { let x = self.base_field.from_i2osp_bytearray(&input[0..]);
-                                   let y = x.sqr().multiply(&x).addto(&&self.consts.b).sqrt();
-                                   if y.is_none() {panic!("Invalide point: not in the curve ...")}
-                                   else { let y = y.unwrap();
-                                          let r_sign = (m_byte & 0x20 != 0) as i8;
-                                          if (y.sign() + 1) >> 1 == r_sign {G2Element {  point : EcPoint { x, y, z: self.base_field.one() },
-                                                                                       consts :self.consts}  }
-                                          else {G2Element {  point : EcPoint { x, y: y.negate(), z: self.base_field.one() },
-                                                             consts :self.consts}  }
-                                        }
-                                 }                                 
-                         }
+
+                    if m_byte == 0xE0 ||
+                        (m_byte & 0x80 != 0 && input.len() != sizeinbytes * self.getorder()) ||
+                        (m_byte & 0x80 == 0 && input.len() != sizeinbytes * 2 * self.getorder()) ||
+                        (m_byte & 0x40 != 0 && input.iter().any(|&e| e != 0)) {
+                        panic!("Invalide compressed point format ...");
+                    }
+
+                    /*if m_byte & 0x80 !=0 {
+                        if input.len() != sizeinbytes * self.getorder() {
+                            panic!("Invalide compressed point format ...")
+                        }
+                    } else {
+                        if input.len() != (sizeinbytes * 2 * self.getorder()) {
+                            panic!("Invalide compressed point format ...")
+                        }
+                    }*/
+                    let x;
+                    let y;
+                    if m_byte & 0x40 !=0 {
+                        x = self.base_field.one();
+                        y = self.base_field.one();
+                        /*if input.iter().any(|&e| e != 0) {
+                            panic!("Invalid compression of an infinity point...");
+                        } else {
+                            G2Element {
+                                point : EcPoint {
+                                    x: self.base_field.one(),
+                                    y: self.base_field.one(),
+                                    z: self.base_field.zero()
+                                },
+                                consts: self.consts
+                            }
+                        }*/
+                    } else {
+                        if input.len() == (sizeinbytes * 2 * self.getorder()) {
+                            x = self.base_field.from_i2osp_bytearray(&input[0..sizeinbytes * self.getorder()]);
+                            y = self.base_field.from_i2osp_bytearray(&input[sizeinbytes * self.getorder()..]);
+                        } else {
+                            x = self.base_field.from_i2osp_bytearray(&input[0..]);
+                            y = x.sqr().multiply(&x).addto(&&self.consts.b).sqrt().
+                                unwrap_or_else(|| panic!("Invalide point: not in the curve ..."));
+
+                            let r_sign = (m_byte & 0x20 != 0) as i8;
+                            if (y.sign() + 1) >> 1 != r_sign {
+                                return G2Element {
+                                    point: EcPoint {
+                                        x,
+                                        y: y.negate(),
+                                        z: self.base_field.one()
+                                    },
+                                    consts: self.consts
+                                }
+                            }
+
+                            /*if y.is_none() {
+                                panic!("Invalide point: not in the curve ...")
+                            } else {
+                                let y = y.unwrap();
+                                let r_sign = (m_byte & 0x20 != 0) as i8;
+                                if (y.sign() + 1) >> 1 == r_sign {
+                                    G2Element {
+                                        point: EcPoint {
+                                            x,
+                                            y,
+                                            z: self.base_field.one()
+                                        },
+                                        consts :self.consts
+                                    }
+                                } else {
+                                    G2Element {
+                                        point: EcPoint {
+                                            x,
+                                            y: y.negate(),
+                                            z: self.base_field.one()
+                                        },
+                                        consts :self.consts
+                                    }
+                                }
+                            }*/
+                        }
+                    }
+
+                    G2Element {
+                        point: EcPoint {
+                            x,
+                            y,
+                            z: self.base_field.one()
+                        },
+                        consts: self.consts
+                    }
                 }
     
                 pub fn from_base64(&self,input :&str) -> G2Element<PRAMASIZE,R,N,MAX_COEFS_COUNT>
