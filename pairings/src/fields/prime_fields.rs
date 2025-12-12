@@ -11,10 +11,10 @@ use num_bigint::{BigInt, BigUint, ToBigInt, ToBigUint};
 use num_traits::{ Euclid, Num, One, ToPrimitive, Zero};
 use rand::RngCore;
 use crate::tools::arithmetic_interface::ArithmeticOperations;
-use crate::tools::hashs::*; 
 use super::super::tools::exponent::Exponent;
 use super::arithmetic;
 use rand::rngs::OsRng;
+use crate::tools::hashs::{hash_string_to_field, i2osp_pf, os2ip};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Endianness {
