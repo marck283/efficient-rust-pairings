@@ -259,13 +259,13 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT : 
                  //     Simplified Shallue-van de Woestijne-Ulas Method (Simplified SWU for AB == 0)
                 //     https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-05#section-6.6.3
                 //     https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-05#appendix-C.2
-                //      Prpposed variant that avoid inversion whenever is the targted extension field
+                //      Proposed variant that avoid inversion whenever is the targeted extension field
                 let mut u: &ExtFieldG2Element<N, PRAMASIZE> = &self.base_field.random_element();
-                if !seed.is_zero() {u = seed};
+                if !seed.is_zero() {u = seed;}
                 let t1 = self.consts.swu_consts.z.multiply(&u.sqr());
                 let t2 = t1.sqr();
                 let mut d = t1.addto(&t2);
-                if d.is_zero() { d = self.consts.swu_consts.j_inv_z.clone()};
+                if d.is_zero() { d = self.consts.swu_consts.j_inv_z.clone();}
                 let d2 = d.sqr();
                 let d3 = d2.multiply(&d);
                 let x0 = d2.addto(&d).multiply(&self.consts.swu_consts.b_div_a);
@@ -362,7 +362,7 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT : 
                     let numbits = self.consts.base_field_numbits;
                     let sizeinbytes = (numbits >> 3) + (((numbits % 8) != 0) as usize);
                     if self.consts.base_field_numbits % 8 <=5 {input[0] = input[0] & 0x1F;}
-                    else {input.remove(0);};
+                    else {input.remove(0);}
 
                     if m_byte == 0xE0 ||
                         (m_byte & 0x80 != 0 && input.len() != sizeinbytes * self.getorder()) ||
