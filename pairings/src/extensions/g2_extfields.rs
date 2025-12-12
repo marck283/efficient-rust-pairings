@@ -199,60 +199,92 @@ impl  <const N:usize, const PARAMSIZE:usize> ExtFieldG2Element<N,PARAMSIZE>
     pub fn sqrt(&self) -> Option<Self> {
         match self {
             ExtFieldG2Element::Fp2_1(x) => {
-                if x.sqrt().is_none() {
+                match x.sqrt() {
+                    None => None,
+                    Some(x) => Some(ExtFieldG2Element::Fp2_1(x))
+                }
+                /*if x.sqrt().is_none() {
                     None
                 } else {
                     Some(ExtFieldG2Element::Fp2_1(x.sqrt().unwrap()))
-                }
+                }*/
             },
             ExtFieldG2Element::Fp4_1(x) => {
-                if x.sqrt().is_none() {
+                match x.sqrt() {
+                    None => None,
+                    Some(x) => Some(ExtFieldG2Element::Fp4_1(x))
+                }
+                /*if x.sqrt().is_none() {
                     None
                 } else {
                     Some(ExtFieldG2Element::Fp4_1(x.sqrt().unwrap()))
-                }
+                }*/
             },
             ExtFieldG2Element::Fp8_1(x) => {
-                if x.sqrt().is_none() {
+                match x.sqrt() {
+                    None => None,
+                    Some(x) => Some(ExtFieldG2Element::Fp8_1(x))
+                }
+                /*if x.sqrt().is_none() {
                     None
                 } else {
                     Some(ExtFieldG2Element::Fp8_1(x.sqrt().unwrap()))
-                }
+                }*/
             },
             ExtFieldG2Element::Fp2_2(x) => {
-                if x.sqrt().is_none() {
+                match x.sqrt() {
+                    None => None,
+                    Some(x) => Some(ExtFieldG2Element::Fp2_2(x))
+                }
+                /*if x.sqrt().is_none() {
                     None
                 } else {
                     Some(ExtFieldG2Element::Fp2_2(x.sqrt().unwrap()))
-                }
+                }*/
             },
             ExtFieldG2Element::Fp4_2(x) => {
-                if x.sqrt().is_none() {
+                match x.sqrt() {
+                    None => None,
+                    Some(x) => Some(ExtFieldG2Element::Fp4_2(x))
+                }
+                /*if x.sqrt().is_none() {
                     None
                 } else {
                     Some(ExtFieldG2Element::Fp4_2(x.sqrt().unwrap()))
-                }
+                }*/
             },
             ExtFieldG2Element::Fp8_2(x) => {
-                if x.sqrt().is_none() {
+                match x.sqrt() {
+                    None => None,
+                    Some(x) => Some(ExtFieldG2Element::Fp8_2(x))
+                }
+                /*if x.sqrt().is_none() {
                     None
                 } else {
                     Some(ExtFieldG2Element::Fp8_2(x.sqrt().unwrap()))
-                }
+                }*/
             },
             ExtFieldG2Element::Fp4_3(x) => {
-                if x.sqrt().is_none() {
+                match x.sqrt() {
+                    None => None,
+                    Some(x) => Some(ExtFieldG2Element::Fp4_3(x))
+                }
+                /*if x.sqrt().is_none() {
                     None
                 } else {
                     Some(ExtFieldG2Element::Fp4_3(x.sqrt().unwrap()))
-                }
+                }*/
             },
             ExtFieldG2Element::Fp8_3(x) => {
-                if x.sqrt().is_none() {
+                match x.sqrt() {
+                    None => None,
+                    Some(x) => Some(ExtFieldG2Element::Fp8_3(x))
+                }
+                /*if x.sqrt().is_none() {
                     None
                 } else {
                     Some(ExtFieldG2Element::Fp8_3(x.sqrt().unwrap()))
-                }
+                }*/
             },
         }
     }
