@@ -82,11 +82,14 @@ pub fn phi_bls24<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
         //    ExtFieldG2Element::Fp4_2(_) => {construction =2},
         //    _ => {unimplemented!("error handeling unsupported type ...")},
         //}
+
+        // This "match" statement used to create G2Element instances in every "if" statement branch.
+        // We had to rewrite it as follows to make it more readable.
         match order {
             1 => {
+                let phix: [FieldElement<N>; 4];
+                let phiy: [FieldElement<N>; 4];
                 if construction == 1 {
-                    let phix: [FieldElement<N>; 4];
-                    let phiy: [FieldElement<N>; 4];
                     if input.consts.twist_type == 'D' {
                         // D-Type Twiste
                         phix = [x[0].substract(&x[1]).multiply(&frobs[7]),x[0].addto(&x[1]).multiply(&frobs[7]).negate(),
@@ -109,9 +112,9 @@ pub fn phi_bls24<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                         }
                     }
                 } else {
-                    let phix = [x[0].multiply(&frobs[7]) ,x[1].negate().multiply(&frobs[7]),x[2].multiply(&frobs[8]),
+                    phix = [x[0].multiply(&frobs[7]) ,x[1].negate().multiply(&frobs[7]),x[2].multiply(&frobs[8]),
                         x[3].negate().multiply(&frobs[8])];
-                    let phiy = [y[0].multiply(&frobs[1]) ,y[1].negate().multiply(&frobs[1]),y[2].multiply(&frobs[2]),
+                    phiy = [y[0].multiply(&frobs[1]) ,y[1].negate().multiply(&frobs[1]),y[2].multiply(&frobs[2]),
                         y[3].negate().multiply(&frobs[2])];
                     G2Element {
                         consts: input.consts,
@@ -158,9 +161,9 @@ pub fn phi_bls24<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                 }
             }
             -1 => {
+                let phix: [FieldElement<N>; 4];
+                let phiy: [FieldElement<N>; 4];
                 if construction == 1 {
-                    let phix: [FieldElement<N>; 4];
-                    let phiy: [FieldElement<N>; 4];
                     if input.consts.twist_type == 'D' {
                         // D-Type Twiste
                         phix = [x[1].substract(&x[0]).multiply(&frobs[6]),x[0].addto(&x[1]).multiply(&frobs[6]),
@@ -184,9 +187,9 @@ pub fn phi_bls24<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                         }
                     }
                 } else {
-                    let phix = [x[0].multiply(&frobs[6]).negate(),x[1].multiply(&frobs[6]),
+                    phix = [x[0].multiply(&frobs[6]).negate(),x[1].multiply(&frobs[6]),
                         x[2].multiply(&frobs[5]).negate(), x[3].multiply(&frobs[5])];
-                    let phiy = [y[0].multiply(&frobs[2]).negate(), y[1].multiply(&frobs[2]),
+                    phiy = [y[0].multiply(&frobs[2]).negate(), y[1].multiply(&frobs[2]),
                         y[2].multiply(&frobs[1]).negate(),y[3].multiply(&frobs[1])];
                     G2Element {
                         consts: input.consts,
@@ -262,12 +265,14 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
     //}
     match order {
         1 => {
+            let phix: [FieldElement<N>; 8];
+            let phiy: [FieldElement<N>; 8];
             if construction == 1 {
-                let phix = [  x[3].double().multiply(&frobs[9]),x[2].double().multiply(&frobs[9]),
+                phix = [  x[3].double().multiply(&frobs[9]),x[2].double().multiply(&frobs[9]),
                     x[0].multiply(&frobs[8]).negate(),x[1].multiply(&frobs[8]),
                     x[4].substract(&x[5]).multiply(&frobs[7]),x[4].addto(&x[5]).multiply(&frobs[7]).negate(),
                     x[6].multiply(&frobs[5].add(1u64)),x[7].multiply(&frobs[5].add(1u64)).negate()];
-                let phiy = [  y[6].substract(&y[7]).multiply(&frobs[17]).negate(),y[6].addto(&y[7]).multiply(&frobs[17]),
+                phiy = [  y[6].substract(&y[7]).multiply(&frobs[17]).negate(),y[6].addto(&y[7]).multiply(&frobs[17]),
                     y[5].addto(&y[4]).multiply(&frobs[16]).negate(),y[5].substract(&y[4]).multiply(&frobs[16]),
                     y[2].multiply(&frobs[14]).negate(),y[3].multiply(&frobs[14]),
                     y[1].multiply(&frobs[15]).negate(),y[0].multiply(&frobs[15]).negate()];
@@ -281,8 +286,6 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                 }
             } else {
                 if construction == 3 {
-                    let phix: [FieldElement<N>; 8];
-                    let phiy: [FieldElement<N>; 8];
                     if input.consts.twist_type == 'D' {
                         // D-Type (with negation) twist
                         phix = [  x[2].addto(&x[3]).multiply(&frobs[3]).negate(),x[3].substract(&x[2]).multiply(&frobs[3]),
@@ -319,8 +322,6 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     }
                 } else {
                     // construction ==2
-                    let phix: [FieldElement<N>; 8];
-                    let phiy: [FieldElement<N>; 8];
                     if *fb_id == 1 {
                         phix = [  x[1].multiply(&frobs[6]).negate(),x[0].multiply(&frobs[5]),
                             x[3].multiply(&frobs[8]).negate(),x[2].multiply(&frobs[7]),
@@ -353,13 +354,15 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
             }
         }
         4 => {
+            let phi4x: [FieldElement<N>; 8];
+            let phi4y: [FieldElement<N>; 8];
             if construction == 1 {
                 let fb5plus1 = frobs[5].add(1u64);
-                let phi4x = [ x[0].multiply(&fb5plus1),x[1].multiply(&fb5plus1),
+                phi4x = [ x[0].multiply(&fb5plus1),x[1].multiply(&fb5plus1),
                     x[2].multiply(&fb5plus1),x[3].multiply(&fb5plus1),
                     x[4].multiply(&fb5plus1).negate(),x[5].multiply(&fb5plus1).negate(),
                     x[6].multiply(&fb5plus1).negate(),x[7].multiply(&fb5plus1).negate()];
-                let phi4y = [ y[1],y[0].negate(),y[3],y[2].negate(),
+                phi4y = [ y[1],y[0].negate(),y[3],y[2].negate(),
                     y[5].negate(),y[4],y[7].negate(),y[6]]; // y' =-y.conjugate * u
                 G2Element {
                     consts: input.consts,
@@ -371,55 +374,51 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                 }
             } else {
                 if construction == 3 {
-                    let phix4: [FieldElement<N>; 8];
-                    let phiy4: [FieldElement<N>; 8];
                     if input.consts.twist_type == 'D' {
                         // D-Type twist
-                        phix4 = [  x[0].multiply(&frobs[5]),x[1].multiply(&frobs[5]),
+                        phi4x = [  x[0].multiply(&frobs[5]),x[1].multiply(&frobs[5]),
                             x[2].multiply(&frobs[5]),x[3].multiply(&frobs[5]),
                             x[4].multiply(&frobs[5]).negate(),x[5].multiply(&frobs[5]).negate(),
                             x[6].multiply(&frobs[5]).negate(),x[7].multiply(&frobs[5]).negate()];
-                        phiy4 = [  y[1].negate(),y[0], y[3].negate(),y[2],
+                        phi4y = [  y[1].negate(),y[0], y[3].negate(),y[2],
                             y[5],y[4].negate(), y[7],y[6].negate()];
                     } else {
                         // M-Type twist
                         // return toFp8([-(fp48FrobConsts[8]-1)*tmp[1],-(fp48FrobConsts[8]-1)*tmp[2],-(fp48FrobConsts[8]-1)*tmp[3],-(fp48FrobConsts[8]-1)*tmp[4],
                         // (fp48FrobConsts[8]-1)*(tmp[5]),(fp48FrobConsts[8]-1)*(tmp[6]),(fp48FrobConsts[8]-1)*(tmp[7]),(fp48FrobConsts[8]-1)*(tmp[8])]);
-                        phix4 = [  x[0].multiply(&frobs[5].sub(1u64)).negate(),x[1].multiply(&frobs[5].sub(1u64)).negate(),
+                        phi4x = [  x[0].multiply(&frobs[5].sub(1u64)).negate(),x[1].multiply(&frobs[5].sub(1u64)).negate(),
                             x[2].multiply(&frobs[5].sub(1u64)).negate(),x[3].multiply(&frobs[5].sub(1u64)).negate(),
                             x[4].multiply(&frobs[5].sub(1u64)),x[5].multiply(&frobs[5].sub(1u64)),
                             x[6].multiply(&frobs[5].sub(1u64)),x[7].multiply(&frobs[5].sub(1u64))];
                         // return toFp8([tmp[2],-tmp[1],tmp[4],-tmp[3], -tmp[6],tmp[5],-tmp[8],tmp[7]]);
-                        phiy4 = [  y[1],y[0].negate(), y[3],y[2].negate(),
+                        phi4y = [  y[1],y[0].negate(), y[3],y[2].negate(),
                             y[5].negate(),y[4], y[7].negate(),y[6]];
                     }
                     G2Element {
                         consts: input.consts,
                         point: EcPoint {
-                            x: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phix4, Some(inconsts))),
-                            y: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phiy4, Some(inconsts))),
+                            x: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phi4x, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phi4y, Some(inconsts))),
                             z: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&z, Some(inconsts)).conjugate())
                         }
                     }
                 } else {
                     //construction ==2
-                    let phix4: [FieldElement<N>; 8];
-                    let phiy4: [FieldElement<N>; 8];
                     if *fb_id == 1 {
-                        phix4 = [  x[0].multiply(&frobs[10]),x[1].multiply(&frobs[10]),
+                        phi4x = [  x[0].multiply(&frobs[10]),x[1].multiply(&frobs[10]),
                             x[2].multiply(&frobs[10]),x[3].multiply(&frobs[10]),
                             x[4].multiply(&frobs[10]).negate(),x[5].multiply(&frobs[10]).negate(),
                             x[6].multiply(&frobs[10]).negate(),x[7].multiply(&frobs[10]).negate()];
-                        phiy4 = [  y[0].multiply(&frobs[0]).negate(),y[1].multiply(&frobs[0]).negate(),
+                        phi4y = [  y[0].multiply(&frobs[0]).negate(),y[1].multiply(&frobs[0]).negate(),
                             y[2].multiply(&frobs[0]).negate(),y[3].multiply(&frobs[0]).negate(),
                             y[4].multiply(&frobs[0]),y[5].multiply(&frobs[0]), y[6].multiply(&frobs[0]),y[7].multiply(&frobs[0])];
                     } else {
                         // Phi variant for the BLS48_287
-                        phix4 = [  x[0].multiply(&frobs[5]),x[1].multiply(&frobs[5]),
+                        phi4x = [  x[0].multiply(&frobs[5]),x[1].multiply(&frobs[5]),
                             x[2].multiply(&frobs[5]),x[3].multiply(&frobs[5]),
                             x[4].multiply(&frobs[5]).negate(),x[5].multiply(&frobs[5]).negate(),
                             x[6].multiply(&frobs[5]).negate(),x[7].multiply(&frobs[5]).negate()];
-                        phiy4 = [  y[0].multiply(&frobs[0]),y[1].multiply(&frobs[0]),
+                        phi4y = [  y[0].multiply(&frobs[0]),y[1].multiply(&frobs[0]),
                             y[2].multiply(&frobs[0]),y[3].multiply(&frobs[0]),
                             y[4].negate().multiply(&frobs[0]),y[5].negate().multiply(&frobs[0]),
                             y[6].negate().multiply(&frobs[0]),y[7].negate().multiply(&frobs[0])];
@@ -427,8 +426,8 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     G2Element {
                         consts: input.consts,
                         point: EcPoint {
-                            x: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phix4, Some(inconsts))),
-                            y: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phiy4, Some(inconsts))),
+                            x: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phi4x, Some(inconsts))),
+                            y: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phi4y, Some(inconsts))),
                             z: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&z, Some(inconsts)).conjugate())
                         } // frobinus at order 4 for an Fp8 is simply the conjugate
                     }
@@ -436,8 +435,9 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
             }
         }
         8 => {
+            let phi8x: [FieldElement<N>; 8];
             if construction == 1 {
-                let phi8x = [ x[0].multiply(&frobs[5]),x[1].multiply(&frobs[5]),
+                phi8x = [ x[0].multiply(&frobs[5]),x[1].multiply(&frobs[5]),
                     x[2].multiply(&frobs[5]),x[3].multiply(&frobs[5]),
                     x[4].multiply(&frobs[5]),x[5].multiply(&frobs[5]),
                     x[6].multiply(&frobs[5]),x[7].multiply(&frobs[5])];
@@ -451,10 +451,9 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                 }
             } else {
                 if construction == 3 {
-                    let phix8: [FieldElement<N>; 8];
                     if input.consts.twist_type == 'D' {
                         //D-Type twist
-                        phix8 = [ x[0].multiply(&frobs[5].sub(1u64)),x[1].multiply(&frobs[5].sub(1u64)),
+                        phi8x = [ x[0].multiply(&frobs[5].sub(1u64)),x[1].multiply(&frobs[5].sub(1u64)),
                             x[2].multiply(&frobs[5].sub(1u64)),x[3].multiply(&frobs[5].sub(1u64)),
                             x[4].multiply(&frobs[5].sub(1u64)),x[5].multiply(&frobs[5].sub(1u64)),
                             x[6].multiply(&frobs[5].sub(1u64)),x[7].multiply(&frobs[5].sub(1u64))];
@@ -462,7 +461,7 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                         //M-Type twist
                         // return toFp8([-fp48FrobConsts[8]*tmp[1],-fp48FrobConsts[8]*tmp[2],-fp48FrobConsts[8]*tmp[3],-fp48FrobConsts[8]*tmp[4],
                         //     -fp48FrobConsts[8]*tmp[5],-fp48FrobConsts[8]*tmp[6],-fp48FrobConsts[8]*tmp[7],-fp48FrobConsts[8]*tmp[8]]);
-                        phix8 = [ x[0].multiply(&frobs[5]).negate(),x[1].multiply(&frobs[5]).negate(),
+                        phi8x = [ x[0].multiply(&frobs[5]).negate(),x[1].multiply(&frobs[5]).negate(),
                             x[2].multiply(&frobs[5]).negate(),x[3].multiply(&frobs[5]).negate(),
                             x[4].multiply(&frobs[5]).negate(),x[5].multiply(&frobs[5]).negate(),
                             x[6].multiply(&frobs[5]).negate(),x[7].multiply(&frobs[5]).negate()];
@@ -470,22 +469,21 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     G2Element {
                         consts: input.consts,
                         point: EcPoint {
-                            x: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phix8, Some(inconsts))),
+                            x: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phi8x, Some(inconsts))),
                             y: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&y, Some(inconsts)).negate()),
                             z: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&z, Some(inconsts)))
                         }
                     }
                 } else {
                     // construction ==2
-                    let phix8: [FieldElement<N>; 8];
                     if *fb_id == 1 {
-                        phix8 = [ x[0].multiply(&frobs[13]),x[1].multiply(&frobs[13]),
+                        phi8x = [ x[0].multiply(&frobs[13]),x[1].multiply(&frobs[13]),
                             x[2].multiply(&frobs[13]),x[3].multiply(&frobs[13]),
                             x[4].multiply(&frobs[13]),x[5].multiply(&frobs[13]),
                             x[6].multiply(&frobs[13]),x[7].multiply(&frobs[13])];
                     } else {
                         // Phi variant for the BLS48_287
-                        phix8 = [ x[0].multiply(&frobs[8]),x[1].multiply(&frobs[8]),
+                        phi8x = [ x[0].multiply(&frobs[8]),x[1].multiply(&frobs[8]),
                             x[2].multiply(&frobs[8]),x[3].multiply(&frobs[8]),
                             x[4].multiply(&frobs[8]),x[5].multiply(&frobs[8]),
                             x[6].multiply(&frobs[8]),x[7].multiply(&frobs[8])];
@@ -493,7 +491,7 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     G2Element {
                         consts: input.consts,
                         point: EcPoint {
-                            x: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phix8, Some(inconsts))),
+                            x: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phi8x, Some(inconsts))),
                             y: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&y, Some(inconsts)).negate()),
                             z: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&z, Some(inconsts)))
                         } // frobinus at order 4 for an Fp8 is simply the identity
@@ -502,17 +500,20 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
             }
         }
         -1 => {
+            let invphix: [FieldElement<N>; 8];
+            let invphiy: [FieldElement<N>; 8];
+            let invphiz: [FieldElement<N>; 8];
             if construction == 1 {
-                let invphix = [x[2].double().multiply(&frobs[4]).negate(),x[3].multiply(&frobs[4]).double(),
+                invphix = [x[2].double().multiply(&frobs[4]).negate(),x[3].multiply(&frobs[4]).double(),
                     x[1].multiply(&frobs[3]).negate(),x[0].multiply(&frobs[3]).negate(),
                     x[5].substract(&x[4]).multiply(&frobs[6]),x[5].addto(&x[4]).multiply(&frobs[6]),
                     x[6].multiply(&frobs[5]).negate(),x[7].multiply(&frobs[5])];
-                let invphiy = [y[7].multiply(&frobs[22]).negate(),y[6].multiply(&frobs[22]).negate(),
+                invphiy = [y[7].multiply(&frobs[22]).negate(),y[6].multiply(&frobs[22]).negate(),
                     y[4].multiply(&frobs[17]).negate(),y[5].multiply(&frobs[17]),
                     y[3].addto(&y[2]).multiply(&frobs[15]),y[2].substract(&y[3]).multiply(&frobs[15]),
                     y[0].substract(&y[1]).multiply(&frobs[23]),y[0].addto(&y[1]).multiply(&frobs[23]).negate()];
                 // Inveting the frobinus for an Fp8
-                let invphiz = [z[0],z[1].negate(),z[2].addto(&z[3]).multiply(&frobs[0]).negate(),
+                invphiz = [z[0],z[1].negate(),z[2].addto(&z[3]).multiply(&frobs[0]).negate(),
                     z[3].substract(&z[2]).multiply(&frobs[0]),z[7].multiply(&frobs[1]),
                     z[6].multiply(&frobs[1]),z[4].multiply(&frobs[2]).negate(),z[5].multiply(&frobs[2])];
                 G2Element {
@@ -525,9 +526,6 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                 }
             } else {
                 if construction == 3 {
-                    let invphix: [FieldElement<N>; 8];
-                    let invphiy: [FieldElement<N>; 8];
-                    let invphiz: [FieldElement<N>; 8];
                     if input.consts.twist_type == 'D' {
                         // D-Type twist
                         invphix = [x[2].substract(&x[3]).multiply(&frobs[8]),x[2].addto(&x[3]).multiply(&frobs[8]).negate(),
@@ -538,10 +536,6 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                             y[7].multiply(&frobs[14]),y[6].multiply(&frobs[14]),
                             y[0].multiply(&frobs[17]).negate(),y[1].multiply(&frobs[17]),
                             y[2].addto(&y[3]).multiply(&frobs[16]),y[2].substract(&y[3]).multiply(&frobs[16])];
-                        // Inveting the frobinus for an Fp8
-                        invphiz = [z[0],z[1].negate(),z[2].addto(&z[3]).multiply(&frobs[0]).negate(),
-                            z[3].substract(&z[2]).multiply(&frobs[0]),z[7].multiply(&frobs[1]).negate(),
-                            z[6].multiply(&frobs[1]).negate(),z[4].multiply(&frobs[2]).negate(),z[5].multiply(&frobs[2])];
                     } else {
                         // M-Type twist
                         // return toFp8([2*fp48FrobConsts[7]*tmp[3],-fp48FrobConsts[7]*2*tmp[4],-fp48FrobConsts[6]*tmp[2],-fp48FrobConsts[6]*tmp[1],
@@ -559,12 +553,13 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                             y[0].substract(&y[1]).multiply(&frobs[23]),y[0].addto(&y[1]).multiply(&frobs[23]).negate()];
                         // return toFp8([tmp[1],-tmp[2],-fp24FrobConsts[3]*(tmp[3]+tmp[4]),fp24FrobConsts[3]*(tmp[4]-tmp[3]),-fp24FrobConsts[4]*(tmp[8]),
                         // -fp24FrobConsts[4]*(tmp[7]),-fp24FrobConsts[5]*(tmp[5]),fp24FrobConsts[5]*(tmp[6])]);
-
-                        // Inveting the frobinus for an Fp8
-                        invphiz = [z[0],z[1].negate(),z[2].addto(&z[3]).multiply(&frobs[0]).negate(),
-                            z[3].substract(&z[2]).multiply(&frobs[0]),z[7].multiply(&frobs[1]).negate(),
-                            z[6].multiply(&frobs[1]).negate(),z[4].multiply(&frobs[2]).negate(),z[5].multiply(&frobs[2])];
                     }
+
+                    // Inveting the frobinus for an Fp8
+                    invphiz = [z[0],z[1].negate(),z[2].addto(&z[3]).multiply(&frobs[0]).negate(),
+                        z[3].substract(&z[2]).multiply(&frobs[0]),z[7].multiply(&frobs[1]).negate(),
+                        z[6].multiply(&frobs[1]).negate(),z[4].multiply(&frobs[2]).negate(),z[5].multiply(&frobs[2])];
+
                     G2Element {
                         consts: input.consts,
                         point: EcPoint {
@@ -575,9 +570,6 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     }
                 } else {
                     // construction ==2
-                    let invphix: [FieldElement<N>; 8];
-                    let invphiy: [FieldElement<N>; 8];
-                    let invphiz: [FieldElement<N>; 8];
                     if *fb_id == 1 {
                         invphix = [x[1].multiply(&frobs[17]).negate(),x[0].multiply(&frobs[16]),x[3].multiply(&frobs[15]).negate(),
                             x[2].multiply(&frobs[14]),x[4].multiply(&frobs[13]).negate(),x[5].multiply(&frobs[13]),
