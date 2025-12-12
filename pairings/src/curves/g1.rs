@@ -8,12 +8,12 @@ use num_traits::{Zero,One,Num,ToPrimitive};
 use std::fmt;
 use std::ops::{Add, BitAnd, BitOr, Mul, Neg, Sub};
 use std::str::FromStr;
-use crate::curves::curve_arithmetics::*;
 use crate::fields::prime_fields::{FieldElement, PrimeField};
 use crate::tools::hashs::{i2osp, i2osp_pf, os2ip};
 use crate::tools::arithmetic_interface::ArithmeticOperations;
 use crate::tools::recoders::{recod_scalar_glv2, WDMASK, WDSIZE, WSIZE};
 use base64::{self, Engine};
+use crate::curves::curve_arithmetics::EcPoint;
 
 #[derive(Debug)]
 pub struct G1SwuIsogeniesConsts<const N:usize,const MAX_COEFS_COUNT:usize> {
