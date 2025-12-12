@@ -75,18 +75,20 @@ impl <'a, const N:usize> PrimeField<N> {
             let reduced_big   : BigUint = input.rem_euclid(&self.modulo_as_bigint.to_bigint().unwrap()).to_biguint().unwrap();
             let mask           = (BigUint::one() << 64) - BigUint::one();
             for i in 0..N { limbs[i] = BigUint::to_u64(&((&reduced_big & (&mask << (i * 64))) >> (i * 64))).unwrap()};
-            FieldElement{   fieldparams : &self.parametres,  
+            /*FieldElement{   fieldparams : &self.parametres,
                             mont_limbs  : arithmetic::mul(&limbs, &self.parametres.rsquare, &self.parametres)
-                            }
+                            }*/
+            FieldElement::new(self.parametres, &arithmetic::mul(&limbs, &self.parametres.rsquare, &self.parametres))
         }
     
     pub fn from_u64(&self, input : u64)-> FieldElement<N> 
         // Load the Fp element from a u64 unsigned value, and convert to montgomery form     
     {   let mut limbs     : [u64;N] = [0;N];              
         limbs[0] = input;
-        FieldElement{   fieldparams : &self.parametres,  
+        /*FieldElement{   fieldparams : &self.parametres,
                         mont_limbs  : arithmetic::mul(&limbs, &self.parametres.rsquare, &self.parametres)
-                        }
+                        }*/
+        FieldElement::new(self.parametres, &arithmetic::mul(&limbs, &self.parametres.rsquare, &self.parametres))
     }
 
     pub fn from_str(&self,input : &str)-> FieldElement<N> 
@@ -140,10 +142,11 @@ impl <'a, const N:usize> PrimeField<N> {
     }
 
     pub fn one(&self) -> FieldElement<N> {
-        FieldElement {
+        /*FieldElement {
             fieldparams: &self.parametres,
             mont_limbs: self.parametres.one,
-        }
+        }*/
+        FieldElement::new(self.parametres, &self.parametres.one)
     }
 
     pub fn hash_to_field(&self,id : &str, security_level:usize,count :usize) -> Vec<FieldElement<N>> {
@@ -156,15 +159,22 @@ impl  <'a, const N:usize> FieldElement<N>  {
     pub fn pow(&self, e :& dyn Exponent<N>, useladder:bool) -> FieldElement<N>
     {   
         let array = e.to_u64_array().unwrap();
-        FieldElement{   mont_limbs : arithmetic::pow(&self.mont_limbs, &array, useladder, self.fieldparams),
-                        fieldparams : &self.fieldparams} 
+        /*FieldElement{   mont_limbs : arithmetic::pow(&self.mont_limbs, &array, useladder, self.fieldparams),
+                        fieldparams : &self.fieldparams}*/
+        FieldElement::new(self.fieldparams, &arithmetic::pow(&self.mont_limbs, &array, useladder, self.fieldparams))
     }
     pub fn sqrt(&self) -> Option<FieldElement<N>> 
     {   let result = arithmetic::sqrt(&self.mont_limbs, &self.fieldparams);
-        if result.is_none() { None }
-        else {  Some(FieldElement{   fieldparams : &self.fieldparams, 
-                                     mont_limbs  : result.unwrap()}) 
-            }
+
+        match result {
+            None => None,
+            Some(result) => Some(FieldElement::new(self.fieldparams, &result))
+        }
+
+        /*if result.is_none() { None }
+        else {  Some(FieldElement{   fieldparams : &self.fieldparams,
+                                     mont_limbs  : result.unwrap()})
+            }*/
     }
     
     pub fn to_big_uint(&self) -> BigUint
@@ -198,12 +208,20 @@ impl  <'a, const N:usize> FieldElement<N>  {
     {
         general_purpose::STANDARD.encode(self.to_i2osp_bytearray())
     }
+
+    pub fn new(field_params: &'static FieldParams<N>, mont_limbs: &[u64; N]) -> Self {
+        Self {
+            fieldparams: field_params,
+            mont_limbs: *mont_limbs
+        }
+    }
 }
 
 impl <const N:usize> ArithmeticOperations for FieldElement<N> {    
     fn addto(&self, other: &Self) -> Self {
-        Self {  fieldparams:self.fieldparams, 
-            mont_limbs: arithmetic::add(&self.mont_limbs, &other.mont_limbs, &self.fieldparams)}
+        /*Self {  fieldparams:self.fieldparams,
+            mont_limbs: arithmetic::add(&self.mont_limbs, &other.mont_limbs, &self.fieldparams)}*/
+        Self::new(self.fieldparams, &arithmetic::add(&self.mont_limbs, &other.mont_limbs, &self.fieldparams))
     }
 
     fn double(&self) -> Self {
@@ -211,23 +229,27 @@ impl <const N:usize> ArithmeticOperations for FieldElement<N> {
     }
 
     fn substract(&self, other: &Self) -> Self {
-        Self {  fieldparams:self.fieldparams, 
-                mont_limbs: arithmetic::sub(&self.mont_limbs, &other.mont_limbs, &self.fieldparams)}
+        /*Self {  fieldparams:self.fieldparams,
+                mont_limbs: arithmetic::sub(&self.mont_limbs, &other.mont_limbs, &self.fieldparams)}*/
+        Self::new(self.fieldparams, &arithmetic::sub(&self.mont_limbs, &other.mont_limbs, &self.fieldparams))
     }
 
     fn multiply(&self, other: &Self) -> Self {
-        Self {  fieldparams:self.fieldparams, 
-            mont_limbs: arithmetic::mul(&self.mont_limbs, &other.mont_limbs, &self.fieldparams)}
+        /*Self {  fieldparams:self.fieldparams,
+            mont_limbs: arithmetic::mul(&self.mont_limbs, &other.mont_limbs, &self.fieldparams)}*/
+        Self::new(self.fieldparams, &arithmetic::mul(&self.mont_limbs, &other.mont_limbs, &self.fieldparams))
     }
 
     fn sqr(&self) -> Self {
-        FieldElement {  fieldparams : &self.fieldparams,
-            mont_limbs : arithmetic::sqr(&self.mont_limbs, &self.fieldparams)}
+        /*FieldElement {  fieldparams : &self.fieldparams,
+            mont_limbs : arithmetic::sqr(&self.mont_limbs, &self.fieldparams)}*/
+        FieldElement::new(self.fieldparams, &arithmetic::sqr(&self.mont_limbs, &self.fieldparams))
     }
 
     fn invert(&self) -> Self {
-        FieldElement{   fieldparams : &self.fieldparams,
-            mont_limbs : arithmetic::invert(&self.mont_limbs,&self.fieldparams)}
+        /*FieldElement{   fieldparams : &self.fieldparams,
+            mont_limbs : arithmetic::invert(&self.mont_limbs,&self.fieldparams)}*/
+        FieldElement::new(self.fieldparams, &arithmetic::invert(&self.mont_limbs,&self.fieldparams))
     }
 
     fn negate(&self) -> Self {
@@ -254,14 +276,16 @@ impl <const N:usize> ArithmeticOperations for FieldElement<N> {
         String::from("0x") + &Self::to_big_uint(self).to_str_radix(16)
     }
     fn one(&self) -> Self {
-        FieldElement{   fieldparams: &self.fieldparams,
+        /*FieldElement{   fieldparams: &self.fieldparams,
                         mont_limbs: self.fieldparams.one.clone(),
-                    }
+                    }*/
+        FieldElement::new(self.fieldparams, &self.fieldparams.one.clone())
     }
     fn zero(&self) -> Self {
-        FieldElement{   fieldparams: &self.fieldparams,
+        /*FieldElement{   fieldparams: &self.fieldparams,
                         mont_limbs: self.fieldparams.zero.clone(),
-                    }
+                    }*/
+        FieldElement::new(self.fieldparams, &self.fieldparams.zero.clone())
     }
     
 }
@@ -278,7 +302,7 @@ impl <const N:usize> ArithmeticOperations for FieldElement<N> {
         fn add(self, rhs: u64) -> Self::Output {
             let mut _rhs =[0;N];
             _rhs[0]=rhs;
-            self.addto(& Self::Output{fieldparams : self.fieldparams,  
+            self.addto(& Self::Output{fieldparams : self.fieldparams,
                                mont_limbs  : arithmetic::mul(&_rhs, &self.fieldparams.rsquare, &self.fieldparams)})
         }
     }
@@ -371,8 +395,8 @@ impl <const N:usize> ArithmeticOperations for FieldElement<N> {
     impl  <'a, const N:usize> Neg for FieldElement<N> {
         type Output =  FieldElement<N>;
         fn neg(self) -> Self::Output {
-        self.negate()
-    }
+            self.negate()
+        }
     }   
     
     impl<'a, const N: usize> fmt::Display for FieldElement<N> {

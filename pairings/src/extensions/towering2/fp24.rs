@@ -26,9 +26,10 @@ pub struct Fp24Field<const PARAMSIZE:usize,const N:usize> {
 fn get_slice_fp8<const PARAMSIZE:usize,const N:usize>(element : &Fp24Element<PARAMSIZE,N>, i : usize) -> Fp8Element<PARAMSIZE,N>
     {       
         let _t: [FieldElement<N>; 8] = element.content[i*8..(i+1)*8].iter()
-        .map(|&element1| FieldElement {fieldparams: element1.fieldparams,
+        .map(|&element1| /*FieldElement {fieldparams: element1.fieldparams,
                                                        mont_limbs: element1.mont_limbs,
-                                                      })
+                                                      }*/
+             element1)
         .collect::<Vec<_>>()
         .try_into().unwrap(); 
         Fp8Element{content :_t, constants :element.constants}        
@@ -37,9 +38,10 @@ fn get_slice_fp8<const PARAMSIZE:usize,const N:usize>(element : &Fp24Element<PAR
 fn get_slice_fp4<const PARAMSIZE:usize,const N:usize>(element : &Fp24Element<PARAMSIZE,N>, i : usize) -> Fp4Element<PARAMSIZE,N>
     {       
         let _t: [FieldElement<N>; 4] = element.content[i*4..(i+1)*4].iter()
-        .map(|&element1| FieldElement {fieldparams: element1.fieldparams,
+        .map(|&element1| /*FieldElement {fieldparams: element1.fieldparams,
                                                        mont_limbs: element1.mont_limbs,
-                                                      })
+                                                      }*/
+             FieldElement::new(element1.fieldparams, &element1.mont_limbs))
         .collect::<Vec<_>>()
         .try_into().unwrap(); 
         Fp4Element{content :_t, constants :element.constants}        
@@ -84,8 +86,9 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,24,N> for Fp24El
         let h1 = t2.mulby_w().addto(&a0.multiply(&b1).addto(&b0.multiply(&a1)));
         //let h2 = a0.addto(&c0).multiply(&a1.addto(&c1)).substract(&t0).substract(&t2).addto(&t1);
         let h2 = a0.multiply(&c1).addto(&c0.multiply(&a1)).addto(&t1);
-        let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
-                                                               fieldparams:self.content[0].fieldparams};24];
+        /*let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
+                                                               fieldparams:self.content[0].fieldparams};24];*/
+        let mut result =[FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
         result[..8].copy_from_slice(&h0.content);
         result[8..16].copy_from_slice(&h1.content);
         result[16..].copy_from_slice(&h2.content);
@@ -105,8 +108,9 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,24,N> for Fp24El
         let h1 = t2.mulby_w().addto(&a.multiply(&b).double());
         //let h2 = a.addto(&c).sqr().substract(&t0).substract(&t2).addto(&t1);
         let h2 = a.multiply(&c).double().addto(&t1);
-        let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
-                                                               fieldparams:self.content[0].fieldparams};24];
+        /*let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
+                                                               fieldparams:self.content[0].fieldparams};24];*/
+        let mut result =[FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
         result[..8].copy_from_slice(&h0.content);
         result[8..16].copy_from_slice(&h1.content);
         result[16..].copy_from_slice(&h2.content);
@@ -236,8 +240,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
         let t1 = c.sqr().mulby_w().substract(&a.multiply(&b));
         let t2 =b.sqr().substract(&a.multiply(&c));                           
         let t3 = c.multiply(&t1).addto(&b.multiply(&t2)).mulby_w().addto(&a.multiply(&t0)).invert();
-        let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
-                                                               fieldparams:self.content[0].fieldparams};24];
+        /*let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
+                                                               fieldparams:self.content[0].fieldparams};24];*/
+        let mut result =[FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
         result[..8].copy_from_slice(&t0.multiply(&t3).content);
         result[8..16].copy_from_slice(&t1.multiply(&t3).content);
         result[16..].copy_from_slice(&t2.multiply(&t3).content);
@@ -269,8 +274,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
        let h20= t1.mulby_v().addto(&t0).mulbyu8(3u8).substract(&a4.addto(&a4));
        //let h21= t2.substract(&t0).substract(&t1).mulbyu8(3u8).addto(&a5.addto(&a5));
        let h21= a2.multiply(&a3).double().mulbyu8(3u8).addto(&a5.addto(&a5));
-       let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
-                                                              fieldparams:self.content[0].fieldparams};24];
+       /*let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
+                                                              fieldparams:self.content[0].fieldparams};24];*/
+        let mut result =[FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
        result[..4].copy_from_slice(&h00.content);
        result[4..8].copy_from_slice(&h01.content);
        result[8..12].copy_from_slice(&h10.content);
@@ -281,14 +287,41 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
     }
     
     pub fn cyclotomic_power(&self, e:& dyn Exponent<N>, negative :bool,naf_repre:&Option<Vec<i8>>) -> Self {
-        let one = FieldElement{mont_limbs:self.content[0].fieldparams.one,
-                                                fieldparams:self.content[0].fieldparams};
-        let zero = FieldElement{mont_limbs:[0;N],
-                                                 fieldparams:self.content[0].fieldparams};        
+        /*let one = FieldElement{mont_limbs:self.content[0].fieldparams.one,
+                                                fieldparams:self.content[0].fieldparams};*/
+        let one = FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.one);
+        /*let zero = FieldElement{mont_limbs:[0;N],
+                                                 fieldparams:self.content[0].fieldparams};*/
+        let zero = FieldElement::new(self.content[0].fieldparams, &[0; N]);
         let mut result: [FieldElement<N>; 24] =[zero;24] ;
         result [0] = one; 
         let mut result = Self::new(&result,self.constants_interface());
-        if naf_repre.is_none() { if let Some(array) = e.to_u64_array() 
+
+        match naf_repre {
+            None => {
+                if let Some(array) = e.to_u64_array() {
+                    let limbnum= e.get_len();
+                    for i in array[0..limbnum].as_ref().iter().rev()  {
+                        for j in (0..64).rev() {
+                            result = result.unisqr();
+                            if (i >> j) & 1u64 == 1u64 {
+                                result = result.multiply(&self);
+                            }
+                        }
+                    }
+                }
+            },
+            Some(naf_repre) => {
+                let selfconj=self.conjugate();
+                for i in (*naf_repre).clone() {
+                    result = result.unisqr();
+                    if i == 1 {result = result.multiply(&self)};
+                    if i ==-1 {result = result.multiply(&selfconj);}
+                }
+            }
+        }
+
+        /*if naf_repre.is_none() { if let Some(array) = e.to_u64_array()
                                         { let limbnum= e.get_len();
                                           for i in array[0..limbnum].as_ref().iter().rev()  {
                                                     for j in (0..64).rev(){ result = result.unisqr();                
@@ -302,7 +335,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
                                                              if i == 1 {result = result.multiply(&self)};
                                                              if i ==-1 {result = result.multiply(&selfconj);}
                                                            }
-             }
+             }*/
         if !negative { result}
         else { result.conjugate()}
 
@@ -370,8 +403,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
             let res1 = t2.mulby_w().addto(&t0);
             let res2 = a0.addto(&b0).multiply(&y0.addto(&y1)).substract(&t0).substract(&t1);
             let res3 = c0.multiply(&y0).addto(&t1);           
-            let mut result =[FieldElement{ mont_limbs:self.content[0].fieldparams.zero,
-                                                                    fieldparams:self.content[0].fieldparams};24];
+            /*let mut result =[FieldElement{ mont_limbs:self.content[0].fieldparams.zero,
+                                                                    fieldparams:self.content[0].fieldparams};24];*/
+            let mut result = [FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
             result[..8].copy_from_slice(&res1.content);
             result[8..16].copy_from_slice(&res2.content);
             result[16..].copy_from_slice(&res3.content);
@@ -392,9 +426,10 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
                             let t3 = a0.addto(&b0).multiply(&a1.addto(&b1));
                             let res1 = t1.mulby_w().addto(&t0);
                             let res2 = t3.substract(&t0).substract(&t2);
-                            let res3 = t2.addto(&c0.multiply(&a1)); 
-                            let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
-                                                                                   fieldparams:self.content[0].fieldparams};24];
+                            let res3 = t2.addto(&c0.multiply(&a1));
+                            /*let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
+                                                                                   fieldparams:self.content[0].fieldparams};24];*/
+                            let mut result =[FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
                             result[..8].copy_from_slice(&res1.content);
                             result[8..16].copy_from_slice(&res2.content);
                             result[16..].copy_from_slice(&res3.content);
@@ -409,8 +444,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
                             let res1 = a0.multiply(&y);
                             let res2 = b0.multiply(&y);
                             let res3 = c0.multiply(&y);
-                            let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
-                                                                                   fieldparams:self.content[0].fieldparams};24];
+                            /*let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
+                                                                                   fieldparams:self.content[0].fieldparams};24];*/
+                            let mut result =[FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
                             result[..8].copy_from_slice(&res1.content);
                             result[8..16].copy_from_slice(&res2.content);
                             result[16..].copy_from_slice(&res3.content);

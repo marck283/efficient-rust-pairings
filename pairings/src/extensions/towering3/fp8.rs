@@ -129,8 +129,12 @@ impl <const PARAMSIZE:usize,const N:usize> Fp8Element <PARAMSIZE,N>{
 
     pub fn sqrt(&self) -> Option<Self>{
         let outparams = self.content[0].fieldparams;
-        let inv2 = FieldElement{mont_limbs: outparams.inv2, fieldparams:outparams};   
-        let zero = Self { content:[FieldElement{mont_limbs:outparams.zero,fieldparams:outparams};8], 
+        //let inv2 = FieldElement{mont_limbs: outparams.inv2, fieldparams:outparams};
+        let inv2 = FieldElement::new(outparams, &outparams.inv2);
+        /*let zero = Self { content:[FieldElement{mont_limbs:outparams.zero,fieldparams:outparams};8],
+                                               constants : self.constants};*/
+        let zero_c = FieldElement::new(outparams, &outparams.zero);
+        let zero = Self { content:[zero_c; 8],
                                                constants : self.constants};
         let a = Fp4Element { content : [self.content[0],self.content[1],self.content[2],self.content[3]], 
                                                constants: self.constants};
@@ -147,7 +151,20 @@ impl <const PARAMSIZE:usize,const N:usize> Fp8Element <PARAMSIZE,N>{
                                                                         rootdelta.content[3].addto(&self.content[3]).multiply(&inv2)],
                                                      constants : self.constants };    
             let mut r = t.sqrt();
-            if r.is_none() { t = t.negate();                                     
+            let mut i = 0u8;
+
+            while r.is_none() && i <= 2u8 {
+                if i == 2u8 {
+                    t = t.substract(&rootdelta);
+                } else {
+                    t = t.negate();
+                }
+
+                r = t.sqrt();
+                i = i + 1;
+            }
+
+            /*if r.is_none() { t = t.negate();
                              r = t.sqrt();   
                              if r.is_none(){ t = t.negate();
                                              r = t.sqrt();   
@@ -155,8 +172,26 @@ impl <const PARAMSIZE:usize,const N:usize> Fp8Element <PARAMSIZE,N>{
                                                              r = t.sqrt(); 
                                                             }
                                             }
-                           }
-            if r.is_none() { None } //Never occurs ...
+                           }*/
+
+            match r {
+                None => None, //Never occurs ...
+                Some(r) => {
+                    if r.equal(&Fp4Element{content: [zero_c; 4],
+                        constants : self.constants }) {
+                        Some(zero)
+                    } else {
+                        let t = b.multiply(&r.addto(&r).invert());
+                        Some(Self{content:[ r.content[0], r.content[1], r.content[2], r.content[3],
+                            t.content[0], t.content[1], t.content[2], t.content[3],
+                        ],
+                            constants : self.constants
+                        })
+                    }
+                }
+            }
+
+            /*if r.is_none() { None } //Never occurs ...
             else { if r.unwrap().equal(&Fp4Element{content :[FieldElement{mont_limbs:outparams.zero,fieldparams:outparams};4],
                                                    constants : self.constants }) 
                             {  Some(zero) }
@@ -169,7 +204,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp8Element <PARAMSIZE,N>{
                                     }
                              )
                         } 
-                 }   
+                 }   */
             }
             else { None }  //Never occurs ...
         }

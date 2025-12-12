@@ -2,15 +2,15 @@
 // EEDIS-Laboratory. UDL-University. Algeria
 // During May 2024.
 
-use std::{fmt};
-use std::ops::Sub;
 use crate::tools::exponent::Exponent;
+use std::ops::Sub;
+use std::fmt;
 
 use super::super::super::fields::prime_fields::{FieldElement, PrimeField};
-use crate::tools::arithmetic_interface::ArithmeticOperations;
-use super::super::ext_fields::{ExtElement, ExtField,ExFieldConsts};
+use super::super::ext_fields::{ExFieldConsts, ExtElement, ExtField};
 use super::fp24::Fp24Element;
 use super::fp8::Fp8Element;
+use crate::tools::arithmetic_interface::ArithmeticOperations;
 
 
 #[derive(Clone, Copy)]
@@ -27,9 +27,10 @@ pub struct Fp48Field<const PARAMSIZE:usize,const N:usize> {
 fn get_slice_fp24<const PARAMSIZE:usize,const N:usize>(element : &Fp48Element<PARAMSIZE,N>, i : usize) -> Fp24Element<PARAMSIZE,N>
     {       
         let _t: [FieldElement<N>; 24] = element.content[i*24..(i+1)*24].iter()
-        .map(|&element1| FieldElement {fieldparams: element1.fieldparams,
+        .map(|&element1| /*FieldElement {fieldparams: element1.fieldparams,
                                                        mont_limbs: element1.mont_limbs,
-                                                      })
+                                                      }*/
+             element1)
         .collect::<Vec<_>>()
         .try_into().unwrap(); 
              Fp24Element{content :_t, constants :element.constants}        
@@ -38,9 +39,9 @@ fn get_slice_fp24<const PARAMSIZE:usize,const N:usize>(element : &Fp48Element<PA
 fn get_slice_fp8<const PARAMSIZE:usize,const N:usize>(element : &Fp48Element<PARAMSIZE,N>, i : usize) -> Fp8Element<PARAMSIZE,N>
     {       
         let _t: [FieldElement<N>; 8] = element.content[i*8..(i+1)*8].iter()
-        .map(|&element1| FieldElement {fieldparams: element1.fieldparams,
+        .map(|&element1| /*FieldElement {fieldparams: element1.fieldparams,
                                                        mont_limbs: element1.mont_limbs,
-                                                      })
+                                                      }*/ element1)
         .collect::<Vec<_>>()
         .try_into().unwrap(); 
              Fp8Element{content :_t, constants :element.constants}        
@@ -377,14 +378,45 @@ impl <const PARAMSIZE:usize,const N:usize> Fp48Element <PARAMSIZE,N>{
     }
     
     pub fn cyclotomic_power(&self, e:& dyn Exponent<N>, negative :bool, naf_repre:&Option<Vec<i8>>) -> Self {
-        let one = FieldElement{ mont_limbs:self.content[0].fieldparams.one,
-                                                 fieldparams:self.content[0].fieldparams};
-        let zero = FieldElement{ mont_limbs:[0;N],
-                                                  fieldparams:self.content[0].fieldparams};        
+        /*let one = FieldElement{ mont_limbs:self.content[0].fieldparams.one,
+                                                 fieldparams:self.content[0].fieldparams};*/
+        let one = FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.one);
+        /*let zero = FieldElement{ mont_limbs:[0;N],
+                                                  fieldparams:self.content[0].fieldparams};*/
+        let zero = FieldElement::new(self.content[0].fieldparams, &[0; N]);
         let mut result: [FieldElement<N>; 48] =[zero;48] ;
         result [0] = one; 
         let mut result = Self::new(&result,self.constants_interface());
-        if naf_repre.is_none() { if let Some(array) = e.to_u64_array() 
+
+        match naf_repre {
+            None => {
+                if let Some(array) = e.to_u64_array() {
+                    let limbnum= e.get_len();
+                    for i in array[0..limbnum].as_ref().iter().rev() {
+                        for j in (0..64).rev() {
+                            result = result.unisqr();
+                            if (i >> j) & 1u64 == 1u64 {
+                                result = result.multiply(&self);
+                            }
+                        }
+                    }
+                }
+            },
+            Some(naf_repre) => {
+                let selfconj=self.conjugate();
+                for i in (*naf_repre).clone() {
+                    result = result.unisqr();
+                    if i == 1 {
+                        result = result.multiply(&self);
+                    }
+                    if i == -1 {
+                        result = result.multiply(&selfconj);
+                    }
+                }
+            }
+        }
+
+        /*if naf_repre.is_none() { if let Some(array) = e.to_u64_array()
                                         { let limbnum= e.get_len();
                                           for i in array[0..limbnum].as_ref().iter().rev()  {
                                                     for j in (0..64).rev(){ result = result.unisqr();                
@@ -398,7 +430,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp48Element <PARAMSIZE,N>{
                                                              if i == 1 {result = result.multiply(&self)};
                                                              if i ==-1 {result = result.multiply(&selfconj);}
                                                            }
-             }
+             }*/
         if !negative { result} else { result.conjugate()}
     }
 

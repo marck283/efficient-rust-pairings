@@ -88,8 +88,11 @@ impl <const N:usize> Fp2Element<N>{
 
     pub fn sqrt(&self) -> Option<Self>{
         let outparams = self.content[0].fieldparams;
-        let inv2 = FieldElement{mont_limbs: outparams.inv2, fieldparams:outparams };   
-        let zero = Self {content:[ FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}; 2]};
+        //let inv2 = FieldElement{mont_limbs: outparams.inv2, fieldparams:outparams };
+        let inv2 = FieldElement::new(outparams, &outparams.inv2);
+        //let zero = Self {content:[ FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}; 2]};
+        let zero_c = FieldElement::new(outparams, &outparams.zero);
+        let zero = Self {content:[ zero_c; 2]};
         let rootdelta = self.content[0].sqr().addto(&self.content[1].sqr()).sqrt();
         if rootdelta.is_some() {
             let mut t1 = self.content[0].addto(&rootdelta.unwrap()).multiply(&inv2);
@@ -119,7 +122,8 @@ impl <const N:usize> Fp2Element<N>{
             match a {
                 None => None,
                 Some(a) => {
-                    if a.equal(&FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}) {
+                    //if a.equal(&FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}) {
+                    if a.equal(&zero_c) {
                         Some(zero)
                     } else {
                         Some(Self {

@@ -106,8 +106,12 @@ impl <const PARAMSIZE:usize,const N:usize> Fp4Element <PARAMSIZE,N>{
 
     pub fn sqrt(&self) -> Option<Self> {
         let outparams = self.content[0].fieldparams;
-        let inv2 = FieldElement{mont_limbs: outparams.inv2, fieldparams:outparams};   
-        let zero = Self{  content:[FieldElement{mont_limbs:outparams.zero,fieldparams:outparams};4],
+        //let inv2 = FieldElement{mont_limbs: outparams.inv2, fieldparams:outparams};
+        let inv2 = FieldElement::new(outparams, &outparams.inv2);
+        /*let zero = Self{  content:[FieldElement{mont_limbs:outparams.zero,fieldparams:outparams};4],
+                                              constants : self.constants};*/
+        let zero_c = FieldElement::new(outparams, &outparams.zero);
+        let zero = Self{  content:[zero_c; 4],
                                               constants : self.constants};
         let a = Fp2Element{content :[self.content[0],self.content[1]], constants:self.constants};
         let b = Fp2Element{content :[self.content[2],self.content[3]], constants:self.constants };
@@ -132,11 +136,11 @@ impl <const PARAMSIZE:usize,const N:usize> Fp4Element <PARAMSIZE,N>{
             }
 
             /*if r.is_none() { t = t.negate();
-                             r = t.sqrt();   
+                             r = t.sqrt();
                              if r.is_none(){ t = t.negate();
-                                             r = t.sqrt();   
+                                             r = t.sqrt();
                                              if r.is_none(){ t = t.substract(&rootdelta);
-                                                             r = t.sqrt(); 
+                                                             r = t.sqrt();
                                                             }
                                             }
                            }*/
@@ -144,7 +148,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp4Element <PARAMSIZE,N>{
             match r {
                 None => None,
                 Some(r) => {
-                    if r.equal(&Fp2Element::new(&[FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}; 2], Some(self.constants))) {
+                    if r.equal(&Fp2Element::new(&[zero_c; 2], Some(self.constants))) {
                         Some(zero)
                     } else {
                         let t = b.multiply(&r.double().invert());
@@ -157,8 +161,8 @@ impl <const PARAMSIZE:usize,const N:usize> Fp4Element <PARAMSIZE,N>{
             }
 
             /*if r.is_none() { None }
-            else { if r.unwrap().equal(&Fp2Element{ content :[FieldElement{mont_limbs:outparams.zero,fieldparams:outparams};2], 
-                                                    constants:self.constants}) 
+            else { if r.unwrap().equal(&Fp2Element{ content :[FieldElement{mont_limbs:outparams.zero,fieldparams:outparams};2],
+                                                    constants:self.constants})
                             {  Some(zero) }
                    else {   let r= r.unwrap();
                             let t =b.multiply(&r.double().invert());
@@ -168,7 +172,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp4Element <PARAMSIZE,N>{
                                       constants : self.constants
                                     }
                              )
-                        } 
+                        }
                  }*/
         } else {
             None

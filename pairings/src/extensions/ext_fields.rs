@@ -38,9 +38,11 @@ pub trait  ExtField<const PARAMSIZE:usize,const ORDER :usize, const N:usize>
             let (field, consts) = self.get_field_consts_pair();
             let mut result =  [field.zero();
                                                         ORDER];       
-            for i in 0..ORDER{result[i] = FieldElement { mont_limbs: self.field_interface().random_element().mont_limbs,
-                                                                fieldparams: field.parametres};         
-                                    };
+            /*for i in 0..ORDER{result[i] = FieldElement { mont_limbs: self.field_interface().random_element().mont_limbs,
+                                                                fieldparams: field.parametres};*/
+            for i in 0..ORDER {
+                result[i] = FieldElement::new(field.parametres, &self.field_interface().random_element().mont_limbs);
+            }
             Self::ElementType::new(&result, consts)
         }
 
@@ -126,20 +128,23 @@ pub trait  ExtField<const PARAMSIZE:usize,const ORDER :usize, const N:usize>
         //  Generate Zero element of the extension field (identity element with respect to Addition)
         fn zero(&self) -> Self::ElementType{
             let (field, consts) = self.get_field_consts_pair();
-            Self::ElementType::new(&[FieldElement { mont_limbs: field.zero().mont_limbs,
+            /*Self::ElementType::new(&[FieldElement { mont_limbs: field.zero().mont_limbs,
                                                             fieldparams: field.parametres,
-                                                           }; ORDER], consts)
+                                                           }; ORDER], consts)*/
+            Self::ElementType::new(&[FieldElement::new(field.parametres, &field.zero().mont_limbs); ORDER], consts)
         }
 
         //  Generate One element of the extension field (identity element with respect to Multiplication)
         fn one(&self) -> Self::ElementType{
             let (field, consts) = self.get_field_consts_pair();
-            let mut one = [FieldElement {   mont_limbs: field.zero().mont_limbs,
+            /*let mut one = [FieldElement {   mont_limbs: field.zero().mont_limbs,
                                                                       fieldparams: field.parametres,
-                                                                  }; ORDER];
-            one[0] = FieldElement { mont_limbs: field.one().mont_limbs,
+                                                                  }; ORDER];*/
+            let mut one = [FieldElement::new(field.parametres, &field.zero().mont_limbs); ORDER];
+            /*one[0] = FieldElement { mont_limbs: field.one().mont_limbs,
                                     fieldparams: field.parametres,
-                                  };
+                                  };*/
+            one[0] = FieldElement::new(field.parametres, &field.one().mont_limbs);
             Self::ElementType::new(&one,consts)
         }        
     }
@@ -237,10 +242,11 @@ pub trait ExtElement<const PARAMSIZE:usize,const ORDER :usize, const N:usize>{
         let out_params= _a[0].fieldparams;
 
         let mut result: [FieldElement<N>; ORDER] = [_a[0].zero(); ORDER];
-        result[0] = FieldElement {
+        /*result[0] = FieldElement {
             mont_limbs: out_params.one,
             fieldparams: out_params
-        };
+        };*/
+        result[0] = FieldElement::new(out_params, &out_params.one);
         let mut result = Self::new(&result, self.constants_interface());
         if let Some(array) = e.to_u64_array() {
             let limbnum= e.get_len();
@@ -312,15 +318,19 @@ pub trait ExtElement<const PARAMSIZE:usize,const ORDER :usize, const N:usize>{
     fn zero(&self) -> Self where Self: Sized  
             {
                 let content =self.content_interface();
-                Self::new(&[FieldElement { mont_limbs: content[0].fieldparams.zero,
+                /*Self::new(&[FieldElement { mont_limbs: content[0].fieldparams.zero,
                                                                 fieldparams: content[0].fieldparams,
-                                                  }; ORDER], self.constants_interface())
+                                                  }; ORDER], self.constants_interface())*/
+                Self::new(&[FieldElement::new(content[0].fieldparams, &content[0].fieldparams.zero); ORDER],
+                          self.constants_interface())
             }
     fn one(&self) -> Self where Self: Sized  
             {
                 let content =self.content_interface();
-                let mut result = [FieldElement { mont_limbs: content[0].fieldparams.zero,fieldparams: content[0].fieldparams}; ORDER];
-                result[0] = FieldElement { mont_limbs: content[0].fieldparams.one,fieldparams: content[0].fieldparams};
+                //let mut result = [FieldElement { mont_limbs: content[0].fieldparams.zero,fieldparams: content[0].fieldparams}; ORDER];
+                let mut result = [FieldElement::new(content[0].fieldparams, &content[0].fieldparams.zero); ORDER];
+                //result[0] = FieldElement { mont_limbs: content[0].fieldparams.one,fieldparams: content[0].fieldparams};
+                result[0] = FieldElement::new(content[0].fieldparams, &content[0].fieldparams.one);
                 Self::new(&result, self.constants_interface())
             }         
     fn sign(&self) -> i8

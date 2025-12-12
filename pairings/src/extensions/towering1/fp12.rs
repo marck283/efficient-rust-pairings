@@ -179,9 +179,10 @@ pub struct Fp12Field<const PARAMSIZE:usize,const N:usize> {
 fn get_slice_fp6<const PARAMSIZE:usize,const N:usize>(element : &Fp12Element<PARAMSIZE,N>, i : usize) -> Fp6Element<PARAMSIZE,N>
     {       
         let _t: [FieldElement<N>; 6] = element.content[i*6..(i+1)*6].iter()
-        .map(|&element1| FieldElement {fieldparams: element1.fieldparams,
+        .map(|&element1| /*FieldElement {fieldparams: element1.fieldparams,
                                                        mont_limbs: element1.mont_limbs,
-                                                      })
+                                                      }*/
+            element1)
         .collect::<Vec<_>>()
         .try_into().unwrap(); 
         Fp6Element{content :_t, constants :None}
@@ -349,14 +350,45 @@ impl <const PARAMSIZE:usize,const N:usize> Fp12Element <PARAMSIZE,N>{
     
     pub fn cyclotomic_power(&self, e:& dyn Exponent<N>, negative:bool, naf_repre:&Option<Vec<i8>>) -> Self {
         // Efficient powering inside cyclotomic sub-group (x^(p^6+1)=1) -- Scott Approache           
-        let one = FieldElement{ mont_limbs:self.content[0].fieldparams.one,
-                                                 fieldparams:self.content[0].fieldparams};
-        let zero = FieldElement{ mont_limbs:[0;N],
-                                                  fieldparams:self.content[0].fieldparams};        
+        /*let one = FieldElement{ mont_limbs:self.content[0].fieldparams.one,
+                                                 fieldparams:self.content[0].fieldparams};*/
+        let one = FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.one);
+        /*let zero = FieldElement{ mont_limbs:[0;N],
+                                                  fieldparams:self.content[0].fieldparams};*/
+        let zero = FieldElement::new(self.content[0].fieldparams, &[0; N]);
         let mut result: [FieldElement<N>; 12] =[zero;12] ;
         result [0] = one; 
         let mut result = Self::new(&result,self.constants_interface());
-        if naf_repre.is_none() { if let Some(array) = e.to_u64_array() 
+
+        match naf_repre {
+            None => {
+                if let Some(array) = e.to_u64_array() {
+                    let limbnum= e.get_len();
+                    for i in array[0..limbnum].as_ref().iter().rev()  {
+                        for j in (0..64).rev() {
+                            result = result.unisqr();
+                            if (i >> j) & 1u64 == 1u64 {
+                                result = result.multiply(&self);
+                            }
+                        }
+                    }
+                }
+            },
+            Some(naf_repre) => {
+                let selfconj=self.conjugate();
+                for i in (*naf_repre).clone() {
+                    result = result.unisqr();
+                    if i == 1 {
+                        result = result.multiply(&self);
+                    }
+                    if i ==-1 {
+                        result = result.multiply(&selfconj);
+                    }
+                }
+            }
+        }
+
+        /*if naf_repre.is_none() { if let Some(array) = e.to_u64_array()
                                         { let limbnum= e.get_len();
                                           for i in array[0..limbnum].as_ref().iter().rev()  {
                                                     for j in (0..64).rev(){ result = result.unisqr();                
@@ -370,7 +402,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp12Element <PARAMSIZE,N>{
                                                              if i == 1 {result = result.multiply(&self)};
                                                              if i ==-1 {result = result.multiply(&selfconj);}
                                                            }
-             }
+             }*/
              if negative {result.conjugate()} else {result}
     }
 

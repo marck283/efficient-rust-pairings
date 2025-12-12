@@ -22,9 +22,9 @@ pub struct Fp24Field<const PARAMSIZE:usize,const N:usize> {
 fn get_slice_fp8<const PARAMSIZE:usize,const N:usize>(element : &Fp24Element<PARAMSIZE,N>, i : usize) -> Fp8Element<PARAMSIZE,N>
     {       
         let _t: [FieldElement<N>; 8] = element.content[i*8..(i+1)*8].iter()
-        .map(|&element1| FieldElement {fieldparams: element1.fieldparams,
+        .map(|&element1| /*FieldElement {fieldparams: element1.fieldparams,
                                                        mont_limbs: element1.mont_limbs,
-                                                      })
+                                                      }*/ element1)
         .collect::<Vec<_>>()
         .try_into().unwrap(); 
         Fp8Element{content :_t, constants :element.constants}        
@@ -69,8 +69,9 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,24,N> for Fp24El
         let h1 = t2.mulby_w().negate().addto(&a0.multiply(&b1).addto(&b0.multiply(&a1)));
         //let h2 = a0.addto(&c0).multiply(&a1.addto(&c1)).substract(&t0).substract(&t2).addto(&t1);
         let h2 = a0.multiply(&c1).addto(&c0.multiply(&a1)).addto(&t1);
-        let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
-                                                               fieldparams:self.content[0].fieldparams};24];
+        /*let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
+                                                               fieldparams:self.content[0].fieldparams};24];*/
+        let mut result= [FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
         result[..8].copy_from_slice(&h0.content);
         result[8..16].copy_from_slice(&h1.content);
         result[16..].copy_from_slice(&h2.content);
@@ -90,8 +91,9 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,24,N> for Fp24El
         let h1 = t2.mulby_w().negate().addto(&a.multiply(&b).double());
         //let h2 = a.addto(&c).sqr().substract(&t0).substract(&t2).addto(&t1);
         let h2 = a.multiply(&c).double().addto(&t1);
-        let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
-                                                               fieldparams:self.content[0].fieldparams};24];
+        /*let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
+                                                               fieldparams:self.content[0].fieldparams};24];*/
+        let mut result= [FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
         result[..8].copy_from_slice(&h0.content);
         result[8..16].copy_from_slice(&h1.content);
         result[16..].copy_from_slice(&h2.content);
@@ -111,8 +113,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
         let t1 = c.sqr().mulby_w().negate().substract(&a.multiply(&b));
         let t2 = b.sqr().substract(&a.multiply(&c));                             
         let t3 = c.multiply(&t1).addto(&b.multiply(&t2)).mulby_w().negate().addto(&a.multiply(&t0)).invert();                
-        let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
-                                                               fieldparams:self.content[0].fieldparams};24];
+        /*let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
+                                                               fieldparams:self.content[0].fieldparams};24];*/
+        let mut result= [FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
         result[..8].copy_from_slice(&t0.multiply(&t3).content);
         result[8..16].copy_from_slice(&t1.multiply(&t3).content);
         result[16..].copy_from_slice(&t2.multiply(&t3).content);
@@ -153,8 +156,10 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
                             let res1 = t1.mulby_w().negate().addto(&t0);
                             let res2 = t3.substract(&t0).substract(&t2);
                             let res3 = t2.addto(&c0.multiply(&a1)); 
-                            let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
-                                                                                   fieldparams:self.content[0].fieldparams};24];
+                            /*let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
+                                                                                   fieldparams:self.content[0].fieldparams};24];*/
+                            let mut result =[FieldElement::new(self.content[0].fieldparams,
+                                                               &self.content[0].fieldparams.zero);24];
                             result[..8].copy_from_slice(&res1.content);
                             result[8..16].copy_from_slice(&res2.content);
                             result[16..].copy_from_slice(&res3.content);
@@ -169,8 +174,10 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
                             let res1 = a0.multiply(&y);
                             let res2 = b0.multiply(&y);
                             let res3 = c0.multiply(&y);
-                            let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
-                                                                                   fieldparams:self.content[0].fieldparams};24];
+                            /*let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
+                                                                                   fieldparams:self.content[0].fieldparams};24];*/
+                            let mut result= [FieldElement::new(self.content[0].fieldparams,
+                                                               &self.content[0].fieldparams.zero); 24];
                             result[..8].copy_from_slice(&res1.content);
                             result[8..16].copy_from_slice(&res2.content);
                             result[16..].copy_from_slice(&res3.content);

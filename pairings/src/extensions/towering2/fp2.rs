@@ -93,9 +93,13 @@ impl <const PARAMSIZE:usize,const N:usize> Fp2Element<PARAMSIZE, N>{
 
     pub fn sqrt(&self) -> Option<Self>{
         let outparams = self.content[0].fieldparams;
-        let inv2 = FieldElement{mont_limbs: outparams.inv2, fieldparams:outparams };   
-        let zero =Self {content:[ FieldElement{mont_limbs:outparams.zero,fieldparams:outparams},
+        //let inv2 = FieldElement{mont_limbs: outparams.inv2, fieldparams:outparams };
+        let inv2 = FieldElement::new(outparams, &outparams.inv2);
+        /*let zero =Self {content:[ FieldElement{mont_limbs:outparams.zero,fieldparams:outparams},
                                                     FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}],
+                                                  constants :self.constants  };*/
+        let zero_c = FieldElement::new(outparams, &outparams.zero);
+        let zero =Self {content:[ zero_c; 2],
                                                   constants :self.constants  };
         let rootdelta = self.content[0].sqr().substract(&self.content[1].sqr().multiply(&self.constants.base_qnr)).sqrt();
         match rootdelta {
@@ -115,19 +119,11 @@ impl <const PARAMSIZE:usize,const N:usize> Fp2Element<PARAMSIZE, N>{
                     a = t1.sqrt();
                     i = i + 1;
                 }
-                /*if a.is_none() { t1 = t1.substract(&rootdelta.unwrap());
-                                 a  = t1.sqrt();
-                                 if a.is_none(){ t1 = t1.negate();
-                                                 a  = t1.sqrt();
-                                                 if a.is_none(){ t1 = t1.substract(&rootdelta.unwrap());
-                                                                 a = t1.sqrt();
-                                                                }
-                                                }
-                               }*/
+
                 match a {
                     None => None,
                     Some(a) => {
-                        if a.equal(&FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}) {
+                        if a.equal(&zero_c) {
                             Some(zero)
                         } else {
                             Some(Self {
@@ -137,16 +133,6 @@ impl <const PARAMSIZE:usize,const N:usize> Fp2Element<PARAMSIZE, N>{
                         }
                     }
                 }
-                /*if a.is_none() { None }
-                else { if a.unwrap().equal(&FieldElement{mont_limbs:outparams.zero,fieldparams:outparams})
-                                {  Some(zero) }
-                       else {Some(Self{content:[a.unwrap(),
-                                                self.content[1].multiply(&a.unwrap().addto(&a.unwrap()).invert())],
-                                       constants :self.constants
-                                      }
-                                 )
-                            }
-                     }*/
             }
         }
         /*if rootdelta.is_some() {
