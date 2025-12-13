@@ -181,7 +181,8 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT :u
                 let p = self.to_affine();
                 let c_bit: u8 = 1;
                 let i_bit: u8 = p.point.z.is_zero() as u8;
-                let s_bit: i8 = if p.point.z.is_zero() {0} else {(p.point.y.sign() == 1) as i8};
+                //let s_bit: i8 = if p.point.z.is_zero() {0} else {(p.point.y.sign() == 1) as i8};
+                let s_bit: i8 = (i_bit != 1 && p.point.y.sign() == 1) as i8;
                 let m_byte: u8 = (c_bit << 7) | (i_bit << 6) | (((s_bit + 1) as u8 >> 1) << 5);
                 let numbits = p.consts.base_field_numbits;                
                 let sizeinbytes = (numbits >> 3) + (((numbits % 8) != 0) as usize);
