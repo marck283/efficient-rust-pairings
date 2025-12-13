@@ -308,7 +308,8 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT : 
                 let z = xden.multiply(&yden);
                 x = xnum.multiply(&z).multiply(&yden);
                 y = ynum.multiply(&z.sqr()).multiply(&xden).multiply(&y);
-                G2Element { point : EcPoint { x ,y ,z },
+                //G2Element { point : EcPoint { x ,y ,z },
+                G2Element { point : EcPoint::new(&x, &y, &z),
                             consts :self.consts,
                           }
             }
@@ -336,7 +337,8 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT : 
                     found = y.is_qr();                    
                 }
                 y = y.sqrt().unwrap();
-                G2Element { point : EcPoint { x ,y , z},
+                //G2Element { point : EcPoint { x ,y , z},
+                G2Element { point : EcPoint::new(&x, &y, &z),
                             consts :self.consts,
                           }
             }
@@ -410,11 +412,12 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT : 
                             let r_sign = (m_byte & 0x20 != 0) as i8;
                             if (y.sign() + 1) >> 1 != r_sign {
                                 return G2Element {
-                                    point: EcPoint {
+                                    /*point: EcPoint {
                                         x,
                                         y: y.negate(),
                                         z: self.base_field.one()
-                                    },
+                                    },*/
+                                    point: EcPoint::new(&x, &y.negate(), &self.base_field.one()),
                                     consts: self.consts
                                 }
                             }
@@ -448,11 +451,12 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT : 
                     }
 
                     G2Element {
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x,
                             y,
                             z: self.base_field.one()
-                        },
+                        },*/
+                        point: EcPoint::new(&x, &y, &self.base_field.one()),
                         consts: self.consts
                     }
                 }
@@ -468,9 +472,10 @@ impl <const PRAMASIZE:usize,const R:usize,const N:usize,const MAX_COEFS_COUNT : 
 
                 pub fn default_generator(&self)->G2Element<PRAMASIZE,R,N,MAX_COEFS_COUNT>
                 {
-                    {G2Element {  point : EcPoint { x :self.consts.default_generator.x, 
-                                                    y: self.consts.default_generator.y, 
-                                                    z: self.consts.default_generator.z },
+                    //{G2Element {  point : EcPoint { x :self.consts.default_generator.x,
+                    {G2Element {  point : EcPoint::new(&self.consts.default_generator.x,
+                                                       &self.consts.default_generator.y,
+                                                       &self.consts.default_generator.z),
                                   consts :self.consts}  } 
                 }
         }

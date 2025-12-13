@@ -39,16 +39,50 @@ impl <T> EcPoint<T> where T :ArithmeticOperations + Clone + Copy + Display, {
             let s    = self.x.multiply(&yy).double().double();
             let m    = xx.double().addto(&xx);
             let t    = m.sqr().substract(&s.double());
-            Self {
+
+            // Call the "new()" method to reduce code duplication
+            Self::new(&t.clone(), &m.multiply(&s.substract(&t)).substract(&yy_2.double().double().double()),
+                &self.y.multiply(&self.z).double())
+            /*Self {
                 x: t.clone(),
                 y: m.multiply(&s.substract(&t)).substract(&yy_2.double().double().double()),
-                //z: self.y.addto(&self.z).sqr().substract(&yy).substract(&zz)
-                z: self.y.multiply(&self.z).double()
-            }
+                z: self.y.addto(&self.z).sqr().substract(&yy).substract(&zz)
+            }*/
         }
     }
 
-    pub fn add_jacobian(&self, rhs :&EcPoint<T>) -> EcPoint<T>{
+    // The following method was redefined like this to increase its maintainability.
+    pub fn add_jacobian(&self, rhs: &EcPoint<T>) -> EcPoint<T> {
+        if rhs.z.is_zero() {
+            // Whenever rhs.z is zero, it does not matter whether self.z is also zero. Therefore,
+            // we can return "self.clone()".
+            return self.clone();
+        }
+
+        if self.z.is_zero() {
+            // In this case, rhs.z is not zero, so we can return "rhs.clone()".
+            return rhs.clone()
+        }
+
+        // https://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-add-2007-bl
+        let z1_2 = self.z.sqr();
+        let z2_2 = rhs.z.sqr();
+        let u1 = self.x.multiply(&z2_2);
+        let u2 = rhs.x.multiply(&z1_2);
+        let s1 = self.y.multiply(&rhs.z).multiply(&z2_2);
+        let s2 = rhs.y.multiply(&self.z).multiply(&z1_2);
+        let h  = u2.substract(&u1);
+        let i  = h.double().sqr();
+        let j  = h.multiply(&i);
+        let r  = s2.substract(&s1).double();
+        let v  = u1.multiply(&i);
+        let x3 = r.sqr().substract(&j).substract(&v.double());
+
+        Self::new(&x3.clone(), &r.multiply(&v.substract(&x3)).substract(&s1.multiply(&j).double()),
+                  &self.z.multiply(&rhs.z).double().multiply(&h))
+    }
+
+    /*pub fn add_jacobian(&self, rhs :&EcPoint<T>) -> EcPoint<T>{
         if self.z.is_zero() {
             if rhs.z.is_zero() {
                 self.clone()
@@ -80,7 +114,7 @@ impl <T> EcPoint<T> where T :ArithmeticOperations + Clone + Copy + Display, {
                 }
             }
         }
-    }
+    }*/
 
     pub fn mixed_jacobian(&self, rhs :&EcPoint<T>) -> EcPoint<T>{
                 // https://www.hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-madd-2007-bl
@@ -94,18 +128,23 @@ impl <T> EcPoint<T> where T :ArithmeticOperations + Clone + Copy + Display, {
                 let r = s2.substract(&self.y).double();
                 let v = self.x.multiply(&i);
                 let x3 = r.sqr().substract(&j).substract(&v.double());
-                Self { x : x3.clone(),
+
+                Self::new(&x3.clone(), &r.multiply(&v.substract(&x3)).substract(&self.y.multiply(&j).double()),
+                        &self.z.multiply(&h).double())
+
+                /*Self { x : x3.clone(),
                        y : r.multiply(&v.substract(&x3)).substract(&self.y.multiply(&j).double()),
                        //z : self.z.addto(&h).sqr().substract(&z1_2).substract(&hh)
                        z : self.z.multiply(&h).double() // Equivalent formulation
-                     }
+                     }*/
                 }
                 
     pub fn multiply_with_const(&self , scalar :i128) -> EcPoint<T>{
         //  not Constant-time multiplication, used when multiplying with small constant
         //  no need for resistance to side-channel attacks !, so can do faster
         let e : u128 = scalar.abs() as u128;
-        let infinit = Self { x: self.x.one(), y: self.x.one(), z: self.x.zero() };
+        //let infinit = Self { x: self.x.one(), y: self.x.one(), z: self.x.zero() };
+        let infinit = Self::new(&self.x.one(), &self.x.one(), &self.x.zero());
         match e {
             0 => {
                 infinit
@@ -133,11 +172,14 @@ impl <T> EcPoint<T> where T :ArithmeticOperations + Clone + Copy + Display, {
 
     pub fn multiply<const N:usize>(&self , scalar :&FieldElement<N>) -> EcPoint<T> {
         // Constant-time multiplication using w-sliding window (w=3)s
-        let infinit = Self { x: self.x.one(), y: self.x.one(), z: self.x.zero() };
+        //let infinit = Self { x: self.x.one(), y: self.x.one(), z: self.x.zero() };
+        let infinit = Self::new(&self.x.one(), &self.x.one(), &self.x.zero());
 
         if self.z.is_zero()  {
             infinit
         } else {
+            // This part of the body was made of a series of nested "if" statements. We rewrote it
+            // like this to make it more readable.
             let s = scalar.to_big_uint();
             if s == BigUint::zero() {
                 return infinit.clone()
@@ -165,6 +207,9 @@ impl <T> EcPoint<T> where T :ArithmeticOperations + Clone + Copy + Display, {
                 let limb = (&code).bitand(ff.clone()).to_u8().unwrap();
                 let sig : i8 = (2 * (limb & 1) as i8) - 1; //2 * ((limb as i8) & 1) - 1;
                 let idx: usize = (((limb & WMASK) >> 1) + 1) as usize;
+                /*result = result.double_jacobian();
+                result = result.double_jacobian();
+                result = result.double_jacobian();*/
                 result = result.double_jacobian().double_jacobian().double_jacobian();
                 if sig == 1 {
                     result = result.add_jacobian(&lookup[idx])
@@ -174,8 +219,12 @@ impl <T> EcPoint<T> where T :ArithmeticOperations + Clone + Copy + Display, {
                 code = code >> WSIZE;
             }
             result.to_affine();
-            result = result.add_jacobian(&lookup[1 - (&s).bitand(BigUint::one()).to_usize().unwrap()].negate());
-            result
+            //result = result.add_jacobian(&lookup[1 - (&s).bitand(BigUint::one()).to_usize().unwrap()].negate());
+
+            // We can now directly return the result of the final computation instead of saving it
+            // in the "result" variable and then returning it
+            result.add_jacobian(&lookup[1 - (&s).bitand(BigUint::one()).to_usize().unwrap()].negate())
+            //result
         }
     }
 
@@ -229,5 +278,13 @@ impl <T> EcPoint<T> where T :ArithmeticOperations + Clone + Copy + Display, {
                 {
                       self.z.is_zero()   
                 }
+
+    pub fn new(x: &T, y: &T, z: &T) -> Self {
+        Self {
+            x: *x,
+            y: *y,
+            z: *z
+        }
+    }
     
 }

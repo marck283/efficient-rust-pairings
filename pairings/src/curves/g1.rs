@@ -106,14 +106,19 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                 if s.bits()<(scalar.fieldparams.num_of_bits /2).try_into().unwrap() {self.multiply(&scalar)}
                 else {  let _2p     = self.point.double_jacobian();
                         let ff: BigUint = BigUint::from_str("255").unwrap();
-                        let mut _2phi   = EcPoint{x: _2p.x.multiply(&self.consts.w), y: _2p.y, z: _2p.z.clone() };
-                        let infinit = EcPoint {x:self.point.x.one(), y : self.point.x.one(), z: self.point.x.zero() };                
+                        //let mut _2phi   = EcPoint{x: _2p.x.multiply(&self.consts.w), y: _2p.y, z: _2p.z.clone() };
+                        let mut _2phi   = EcPoint::new(&_2p.x.multiply(&self.consts.w), &_2p.y, &_2p.z.clone());
+                        //let infinit = EcPoint {x:self.point.x.one(), y : self.point.x.one(), z: self.point.x.zero() };
+                        let infinit = EcPoint::new(&self.point.x.one(), &self.point.x.one(), &self.point.x.zero());
                         //const TABLESIZE :usize = 1 << (WDSIZE - 1);
                         //const BLOCKSIZE :usize = 1 << (WSIZE - 1);
                         let mut lookup = [infinit;TABLESIZE >> 1];
-                        lookup[0] = EcPoint {   x: self.point.x.multiply(&self.consts.w.addto(&self.point.x.one())).negate(),
+                        /*lookup[0] = EcPoint {   x: self.point.x.multiply(&self.consts.w.addto(&self.point.x.one())).negate(),
                                                 y: self.point.y.negate(),
-                                                z: self.point.z.clone()};
+                                                z: self.point.z.clone()};*/
+                        lookup[0] = EcPoint::new(&self.point.x.multiply(&self.consts.w.addto(&self.point.x.one())).negate(),
+                                                &self.point.y.negate(),
+                                                &self.point.z.clone());
                         lookup[1] = _2p.add_jacobian(&lookup[0]);
                         lookup[2] = _2p.add_jacobian(&lookup[1]);
                         lookup[3] = _2p.add_jacobian(&lookup[2]);
@@ -161,8 +166,9 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
 
             pub fn phi(&self) -> G1Element<R,N,MAX_COEFS_COUNT>
             {
-                G1Element{ point : EcPoint{x: self.point.x.multiply(&self.consts.w), y: self.point.y, z: self.point.z.clone() }, 
-                           consts : self.consts}    
+                //G1Element{ point : EcPoint{x: self.point.x.multiply(&self.consts.w), y: self.point.y, z: self.point.z.clone() },
+                G1Element{ point : EcPoint::new(&self.point.x.multiply(&self.consts.w), &self.point.y, &self.point.z.clone()),
+                           consts : self.consts}
             }
 
             pub fn is_on_curve(&self) -> bool
@@ -192,13 +198,9 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                 let mut p = self.point.clone();
                 p.to_affine();
                 let c_bit: u8 = 1;
-                //let i_bit: u8 = if self.point.z.is_zero() {1} else {0};
-                let (i_bit, s_bit): (u8, i8) = if self.point.z.is_zero() {
-                    (1, 0)
-                } else {
-                    (0, (self.point.y.sign() == 1) as i8)
-                };
+                let i_bit: u8 = if self.point.z.is_zero() {1} else {0};
                 //let s_bit: i8 = if self.point.z.is_zero() {0} else {if self.point.y.sign()==1 {1} else {0}};
+                let s_bit: i8 = (i_bit != 1 && self.point.y.sign() == 1) as i8;
                 let m_byte: u8 = (c_bit << 7) | (i_bit << 6) | (((s_bit + 1) as u8 >> 1) << 5); // Leave this last part here because it could be trying to make the value even
                 let numbits = self.point.x.fieldparams.num_of_bits;
                 //let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};
@@ -372,11 +374,12 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
         fn get_g1_element(&self, x: &FieldElement<N>, y: &FieldElement<N>, z: &FieldElement<N>,
                           consts: &'static G1Consts<R, N, MAX_COEFS_COUNT>) -> G1Element<R,N,MAX_COEFS_COUNT> {
             G1Element {
-                point: EcPoint {
+                /*point: EcPoint {
                     x: *x,
                     y: *y,
                     z: *z
-                },
+                },*/
+                point: EcPoint::new(x, y, z),
                 consts
             }
         }

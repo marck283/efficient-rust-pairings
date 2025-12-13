@@ -105,11 +105,14 @@ pub fn phi_bls24<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     }
                     G2Element {
                         consts: input.consts,
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phix, Some(inconsts))),
                             y: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phiy, Some(inconsts))),
                             z: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&z, Some(inconsts)).frobinus())
-                        }
+                        }*/
+                        point: EcPoint::new(&ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phix, Some(inconsts))),
+                            &ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phiy, Some(inconsts))),
+                            &ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&z, Some(inconsts)).frobinus()))
                     }
                 } else {
                     phix = [x[0].multiply(&frobs[7]) ,x[1].negate().multiply(&frobs[7]),x[2].multiply(&frobs[8]),
@@ -118,11 +121,14 @@ pub fn phi_bls24<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                         y[3].negate().multiply(&frobs[2])];
                     G2Element {
                         consts: input.consts,
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phix, Some(inconsts))),
                             y: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phiy, Some(inconsts))),
                             z: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&z, Some(inconsts)).frobinus())
-                        }
+                        }*/
+                        point: EcPoint::new(&ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phix, Some(inconsts))),
+                            &ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phiy, Some(inconsts))),
+                            &ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&z, Some(inconsts)).frobinus()))
                     }
                 }
             }
@@ -141,22 +147,28 @@ pub fn phi_bls24<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     }
                     G2Element {
                         consts: input.consts,
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phi4x, Some(inconsts))),
                             y: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&y, Some(inconsts)).negate()),
                             z: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&z, Some(inconsts)))
-                        }
+                        }*/
+                        point: EcPoint::new(&ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phi4x, Some(inconsts))),
+                            &ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&y, Some(inconsts)).negate()),
+                            &ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&z, Some(inconsts))))
                     }
                 } else {
                     let phi4x = [x[0].multiply(&frobs[8]) ,x[1].multiply(&frobs[8]),x[2].multiply(&frobs[8]),
                         x[3].multiply(&frobs[8])];
                     G2Element {
                         consts: input.consts,
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phi4x, Some(inconsts))),
                             y: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&y, Some(inconsts)).negate()),
                             z: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&z, Some(inconsts)))
-                        }
+                        }*/
+                        point: EcPoint::new(&ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phi4x, Some(inconsts))),
+                            &ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&y, Some(inconsts)).negate()),
+                            &ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&z, Some(inconsts))))
                     }
                 }
             }
@@ -180,11 +192,14 @@ pub fn phi_bls24<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     }
                     G2Element {
                         consts: input.consts,
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phix, Some(inconsts))),
                             y: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phiy, Some(inconsts))),
                             z: ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&z, Some(inconsts)).frobinus().conjugate()) //invert of the frobinus is its conjugate//
-                        }
+                        }*/
+                        point: EcPoint::new(&ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phix, Some(inconsts))),
+                            &ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&phiy, Some(inconsts))),
+                            &ExtFieldG2Element::Fp4_1(Fp4Element_1::new(&z, Some(inconsts)).frobinus().conjugate())) //invert of the frobinus is its conjugate//
                     }
                 } else {
                     phix = [x[0].multiply(&frobs[6]).negate(),x[1].multiply(&frobs[6]),
@@ -193,11 +208,14 @@ pub fn phi_bls24<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                         y[2].multiply(&frobs[1]).negate(),y[3].multiply(&frobs[1])];
                     G2Element {
                         consts: input.consts,
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phix, Some(inconsts))),
                             y: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phiy, Some(inconsts))),
                             z: ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&z, Some(inconsts)).frobinus().conjugate()) //invert of the frobinus is its conjugate//
-                        }
+                        }*/
+                        point: EcPoint::new(&ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phix, Some(inconsts))),
+                            &ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&phiy, Some(inconsts))),
+                            &ExtFieldG2Element::Fp4_2(Fp4Element_2::new(&z, Some(inconsts)).frobinus().conjugate())) //invert of the frobinus is its conjugate//
                     }
                 }
             }
@@ -278,11 +296,14 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     y[1].multiply(&frobs[15]).negate(),y[0].multiply(&frobs[15]).negate()];
                 G2Element {
                     consts: input.consts,
-                    point: EcPoint {
+                    /*point: EcPoint {
                         x: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phix, Some(inconsts))),
                         y: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phiy, Some(inconsts))),
                         z: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&z, Some(inconsts)).frobinus())
-                    }
+                    }*/
+                    point: EcPoint::new(&ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phix, Some(inconsts))),
+                        &ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phiy, Some(inconsts))),
+                        &ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&z, Some(inconsts)).frobinus()))
                 }
             } else {
                 if construction == 3 {
@@ -314,11 +335,14 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     }
                     G2Element {
                         consts: input.consts,
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phix, Some(inconsts))),
                             y: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phiy, Some(inconsts))),
                             z: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&z, Some(inconsts)).frobinus())
-                        }
+                        }*/
+                        point: EcPoint::new(&ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phix, Some(inconsts))),
+                            &ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phiy, Some(inconsts))),
+                            &ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&z, Some(inconsts)).frobinus()))
                     }
                 } else {
                     // construction ==2
@@ -344,11 +368,14 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     }
                     G2Element {
                         consts: input.consts,
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phix, Some(inconsts))),
                             y: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phiy, Some(inconsts))),
                             z: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&z, Some(inconsts)).frobinus())
-                        }
+                        }*/
+                        point: EcPoint::new(&ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phix, Some(inconsts))),
+                            &ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phiy, Some(inconsts))),
+                            &ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&z, Some(inconsts)).frobinus()))
                     }
                 }
             }
@@ -366,11 +393,14 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     y[5].negate(),y[4],y[7].negate(),y[6]]; // y' =-y.conjugate * u
                 G2Element {
                     consts: input.consts,
-                    point: EcPoint {
+                    /*point: EcPoint {
                         x: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phi4x, Some(inconsts))),
                         y: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phi4y, Some(inconsts))),
                         z: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&z, Some(inconsts)).conjugate())
-                    } // frobinus at order 4 for an Fp8 is simply the conjugate
+                    } // frobinus at order 4 for an Fp8 is simply the conjugate*/
+                    point: EcPoint::new(&ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phi4x, Some(inconsts))),
+                        &ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phi4y, Some(inconsts))),
+                        &ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&z, Some(inconsts)).conjugate())) // frobinus at order 4 for an Fp8 is simply the conjugate
                 }
             } else {
                 if construction == 3 {
@@ -396,11 +426,14 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     }
                     G2Element {
                         consts: input.consts,
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phi4x, Some(inconsts))),
                             y: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phi4y, Some(inconsts))),
                             z: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&z, Some(inconsts)).conjugate())
-                        }
+                        }*/
+                        point: EcPoint::new(&ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phi4x, Some(inconsts))),
+                            &ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phi4y, Some(inconsts))),
+                            &ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&z, Some(inconsts)).conjugate()))
                     }
                 } else {
                     //construction ==2
@@ -425,11 +458,14 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     }
                     G2Element {
                         consts: input.consts,
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phi4x, Some(inconsts))),
                             y: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phi4y, Some(inconsts))),
                             z: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&z, Some(inconsts)).conjugate())
-                        } // frobinus at order 4 for an Fp8 is simply the conjugate
+                        } // frobinus at order 4 for an Fp8 is simply the conjugate*/
+                        point: EcPoint::new(&&ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phi4x, Some(inconsts))),
+                            &ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phi4y, Some(inconsts))),
+                            &ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&z, Some(inconsts)).conjugate())) // frobinus at order 4 for an Fp8 is simply the conjugate
                     }
                 }
             }
@@ -443,11 +479,14 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     x[6].multiply(&frobs[5]),x[7].multiply(&frobs[5])];
                 G2Element {
                     consts: input.consts,
-                    point: EcPoint {
+                    /*point: EcPoint {
                         x: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phi8x, Some(inconsts))),
                         y: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&y, Some(inconsts)).negate()),
                         z: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&z, Some(inconsts)))
-                    } // frobinus at order 4 for an Fp8 is simply the identity
+                    } // frobinus at order 4 for an Fp8 is simply the identity*/
+                    point: EcPoint::new(&ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&phi8x, Some(inconsts))),
+                        &ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&y, Some(inconsts)).negate()),
+                        &ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&z, Some(inconsts)))) // frobinus at order 4 for an Fp8 is simply the identity
                 }
             } else {
                 if construction == 3 {
@@ -468,11 +507,14 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     }
                     G2Element {
                         consts: input.consts,
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phi8x, Some(inconsts))),
                             y: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&y, Some(inconsts)).negate()),
                             z: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&z, Some(inconsts)))
-                        }
+                        }*/
+                        point: EcPoint::new(&ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&phi8x, Some(inconsts))),
+                            &ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&y, Some(inconsts)).negate()),
+                            &ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&z, Some(inconsts))))
                     }
                 } else {
                     // construction ==2
@@ -490,11 +532,14 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     }
                     G2Element {
                         consts: input.consts,
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phi8x, Some(inconsts))),
                             y: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&y, Some(inconsts)).negate()),
                             z: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&z, Some(inconsts)))
-                        } // frobinus at order 4 for an Fp8 is simply the identity
+                        } // frobinus at order 4 for an Fp8 is simply the identity*/
+                        point: EcPoint::new(&ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&phi8x, Some(inconsts))),
+                            &ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&y, Some(inconsts)).negate()),
+                            &ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&z, Some(inconsts)))) // frobinus at order 4 for an Fp8 is simply the identity
                     }
                 }
             }
@@ -518,11 +563,14 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     z[6].multiply(&frobs[1]),z[4].multiply(&frobs[2]).negate(),z[5].multiply(&frobs[2])];
                 G2Element {
                     consts: input.consts,
-                    point: EcPoint {
+                    /*point: EcPoint {
                         x: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&invphix, Some(inconsts))),
                         y: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&invphiy, Some(inconsts))),
                         z: ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&invphiz, Some(inconsts)))
-                    }
+                    }*/
+                    point: EcPoint::new(&ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&invphix, Some(inconsts))),
+                        &ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&invphiy, Some(inconsts))),
+                        &ExtFieldG2Element::Fp8_1(Fp8Element_1::new(&invphiz, Some(inconsts))))
                 }
             } else {
                 if construction == 3 {
@@ -562,11 +610,14 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
 
                     G2Element {
                         consts: input.consts,
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&invphix, Some(inconsts))),
                             y: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&invphiy, Some(inconsts))),
                             z: ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&invphiz, Some(inconsts))),
-                        }
+                        }*/
+                        point: EcPoint::new(&ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&invphix, Some(inconsts))),
+                            &ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&invphiy, Some(inconsts))),
+                            &ExtFieldG2Element::Fp8_3(Fp8Element_3::new(&invphiz, Some(inconsts))))
                     }
                 } else {
                     // construction ==2
@@ -598,11 +649,14 @@ pub fn phi_bls48<const PRAMASIZE:usize,const R: usize, const N: usize, const MAX
                     }
                     G2Element {
                         consts: input.consts,
-                        point: EcPoint {
+                        /*point: EcPoint {
                             x: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&invphix, Some(inconsts))),
                             y: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&invphiy, Some(inconsts))),
                             z: ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&invphiz, Some(inconsts)))
-                        }
+                        }*/
+                        point: EcPoint::new(&ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&invphix, Some(inconsts))),
+                            &ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&invphiy, Some(inconsts))),
+                            &ExtFieldG2Element::Fp8_2(Fp8Element_2::new(&invphiz, Some(inconsts))))
                     }
                 }
             }
