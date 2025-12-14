@@ -23,11 +23,14 @@ fn compute_res<const PRAMASIZE: usize, const R: usize, const N: usize,
 fn create_infinit<const PRAMASIZE:usize, const R: usize, const N: usize, const MAX_COEFS_COUNT: usize>(
     input: &G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT>) -> G2Element<PRAMASIZE, R, N, MAX_COEFS_COUNT> {
     G2Element {
-        point: EcPoint {
+        /*point: EcPoint {
             x: input.point.x.one(),
             y: input.point.x.one(),
             z: input.point.x.zero()
-        },
+        },*/
+        point: EcPoint::new(&input.point.x.one(),
+            &input.point.x.one(),
+            &input.point.x.zero()),
         consts: input.consts
     }
 }

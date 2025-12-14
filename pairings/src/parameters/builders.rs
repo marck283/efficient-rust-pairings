@@ -142,10 +142,13 @@ pub fn build_g1_params<'a ,const NUMLIMBS:usize,const NUMFROBCONSTS :usize, cons
                                                             inv_z : base_field.from_hex_str(&input.swu_z_g1).invert().negate(),
                                                             b_div_a : base_field.from_hex_str(&input.swu_b_g1).multiply(&base_field.from_hex_str(&input.swu_a_g1).invert()).negate()
                                                         },                              
-                    default_generator :EcPoint {    x: base_field.from_hex_str(&input.g1_generator[0]),
+                    /*default_generator :EcPoint {    x: base_field.from_hex_str(&input.g1_generator[0]),
                                                     y: base_field.from_hex_str(&input.g1_generator[1]),
                                                     z: base_field.from_hex_str(&"0x1")
-                                                }
+                                                }*/
+                    default_generator: EcPoint::new(&base_field.from_hex_str(&input.g1_generator[0]),
+                                                    &base_field.from_hex_str(&input.g1_generator[1]),
+                                                    &base_field.from_hex_str(&"0x1"))
               }
 }
 
@@ -185,11 +188,14 @@ pub fn build_g2_params<'a ,const PRAMASIZE:usize, const NUMLIMBS:usize,const NUM
                                                     },
                 twist_type: input.twist_type,
                 order: G2_ORDER,
-                default_generator :EcPoint {
+                /*default_generator :EcPoint {
                     x: base_field.from_hex_strings(&input.g2_generator[0]),
                     y: base_field.from_hex_strings(&input.g2_generator[1]),
                     z: base_field.one(),
-                }
+                }*/
+                default_generator: EcPoint::new(&base_field.from_hex_strings(&input.g2_generator[0]),
+                    &base_field.from_hex_strings(&input.g2_generator[1]),
+                    &base_field.one())
             }
             
 }                                                                                           
