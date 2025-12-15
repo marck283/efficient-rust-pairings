@@ -2,7 +2,7 @@ module myapp
 
 go 1.23.2
 
-require github.com/consensys/gnark-crypto v0.19.2
+require github.com/consensys/gnark-crypto v0.19.2 // Fixes some security issues, including an instance of CWE-303
 
 require (
 	github.com/bits-and-blooms/bitset v1.20.0 // indirect
