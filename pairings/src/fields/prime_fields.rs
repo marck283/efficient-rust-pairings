@@ -135,10 +135,11 @@ impl <'a, const N:usize> PrimeField<N> {
         }
     
     pub fn zero(&self) -> FieldElement<N> {
-        FieldElement {
+        FieldElement::new(&self.parametres, &[0u64; N])
+        /*FieldElement {
             fieldparams: &self.parametres,
             mont_limbs: [0u64; N],
-        }
+        }*/
     }
 
     pub fn one(&self) -> FieldElement<N> {
