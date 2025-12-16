@@ -193,8 +193,14 @@ impl  <'a, const N:usize> FieldElement<N>  {
         let val = arithmetic::mul(&self.mont_limbs, &one, self.fieldparams);        
         let mut i =N-1;
         while (val[i] == self.fieldparams.sig_theshold[i]) & (i>0) { i=i-1}
-        let sig = if val[i] > self.fieldparams.sig_theshold[i] {-1} else {1};        
-        sig
+
+        // We can now return the value directly instead of saving it into "sig" and then returning it.
+        /*let sig = if val[i] > self.fieldparams.sig_theshold[i] {-1} else {1};
+        sig*/
+        if val[i] > self.fieldparams.sig_theshold[i] {
+            return -1
+        }
+        1
     }
 
     pub fn to_i2osp_bytearray(&self) -> Vec<u8>
