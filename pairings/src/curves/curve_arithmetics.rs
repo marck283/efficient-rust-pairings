@@ -205,13 +205,19 @@ impl <T> EcPoint<T> where T :ArithmeticOperations + Clone + Copy + Display, {
             code = code >> (WSIZE -1);
             while code != BigUint::one() {
                 let limb = (&code).bitand(ff.clone()).to_u8().unwrap();
-                let sig : i8 = (2 * (limb & 1) as i8) - 1; //2 * ((limb as i8) & 1) - 1;
+                //let sig : i8 = (2 * (limb & 1) as i8) - 1; //2 * ((limb as i8) & 1) - 1;
                 let idx: usize = (((limb & WMASK) >> 1) + 1) as usize;
                 /*result = result.double_jacobian();
                 result = result.double_jacobian();
                 result = result.double_jacobian();*/
                 result = result.double_jacobian().double_jacobian().double_jacobian();
-                if sig == 1 {
+
+                /* Since "sig" has a maximum value of "1" and a minimum value of "-1", we can simplify
+                   the following "if" statement by considering only "limb & 1" instead of "sig". This
+                   way, we are also able to delete "sig"'s declaration. */
+
+                //if sig == 1 {
+                if (limb & 1) == 1 {
                     result = result.add_jacobian(&lookup[idx])
                 } else {
                     result = result.add_jacobian(&lookup[idx].negate())

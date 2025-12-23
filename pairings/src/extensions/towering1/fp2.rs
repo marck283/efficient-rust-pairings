@@ -43,33 +43,42 @@ impl <const N:usize> ExtElement<0,2,N> for Fp2Element<N>{
     fn multiply(&self, rhs:&Self) -> Self {
         let v0 =self.content[0].multiply(&rhs.content[0]);
         let v1 =self.content[1].multiply(&rhs.content[1]);
-        Self {content : [v0.substract(&v1),
-            self.content[0].multiply(&rhs.content[1]).addto(&self.content[1].multiply(&rhs.content[0]))
-            /*self.content[0].addto(&self.content[1]).multiply(
-                            &rhs.content[0].addto(&rhs.content[1])).substract(&v0).substract(&v1)*/
-                                    ]}
+
+        Self::new(&[v0.substract(&v1),
+            self.content[0].multiply(&rhs.content[1]).addto(&self.content[1].multiply(&rhs.content[0]))], None)
+        /*Self {content : [v0.substract(&v1),
+            self.content[0].addto(&self.content[1]).multiply(
+                            &rhs.content[0].addto(&rhs.content[1])).substract(&v0).substract(&v1)
+                                    ]}*/
     }
 
     fn sqr(&self) -> Self {
         let v0 =self.content[0].sqr();
         let v1 =self.content[1].sqr();  
         let v2 =self.content[0].multiply(&self.content[1]);
-        Self {content : [v0.substract(&v1), v2.addto(&v2)]}
+
+        Self::new(&[v0.substract(&v1), v2.addto(&v2)], None)
+        //Self {content : [v0.substract(&v1), v2.addto(&v2)]}
     }
 
-    fn new(content :&[FieldElement<N>; 2],_consts :Option<&ExFieldConsts<0,N>>) -> Fp2Element<N>
-        {   Fp2Element{content :content.clone()}    }
+    fn new(content :&[FieldElement<N>; 2],_consts :Option<&ExFieldConsts<0,N>>) -> Fp2Element<N> {
+        Fp2Element {
+            content: content.clone()
+        }
+    }
 
 }
 
 impl <const N:usize> Fp2Element<N>{
     
     pub fn mul_by_u_p_1(&self) -> Self {
-        Self {content : [self.content[0].substract(&self.content[1]),self.content[0].addto(&self.content[1])]}
+        Self::new(&[self.content[0].substract(&self.content[1]),self.content[0].addto(&self.content[1])], None)
+        //Self {content : [self.content[0].substract(&self.content[1]),self.content[0].addto(&self.content[1])]}
 
     } 
     pub fn conjugate(&self) -> Self {
-        Self {content : [self.content[0] , self.content[1].negate()]}
+        Self::new(&[self.content[0], self.content[1].negate()], None)
+        //Self {content : [self.content[0] , self.content[1].negate()]}
     }
 
     pub fn frobinus(&self) -> Self {
@@ -78,7 +87,9 @@ impl <const N:usize> Fp2Element<N>{
     }   
     pub fn invert(&self) -> Self{
         let  t = self.content[0].sqr().addto(&self.content[1].sqr()).invert();
-        Self {content :[self.content[0].multiply(&t), self.content[1].multiply(&t).negate()]}
+
+        Self::new(&[self.content[0].multiply(&t), self.content[1].multiply(&t).negate()], None)
+        //Self {content :[self.content[0].multiply(&t), self.content[1].multiply(&t).negate()]}
     }
     
     pub fn is_qr(&self) -> bool{
@@ -91,14 +102,18 @@ impl <const N:usize> Fp2Element<N>{
         //let inv2 = FieldElement{mont_limbs: outparams.inv2, fieldparams:outparams };
         let inv2 = FieldElement::new(outparams, &outparams.inv2);
         //let zero = Self {content:[ FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}; 2]};
+
+        // Now we can create a variable called "zero_c" to avoid computing the same result multiple times.
         let zero_c = FieldElement::new(outparams, &outparams.zero);
-        let zero = Self {content:[ zero_c; 2]};
+        let zero = Self::new(&[zero_c; 2], None);
         let rootdelta = self.content[0].sqr().addto(&self.content[1].sqr()).sqrt();
         if rootdelta.is_some() {
             let mut t1 = self.content[0].addto(&rootdelta.unwrap()).multiply(&inv2);
             let mut a = t1.sqrt();
             let mut i = 0u8;
 
+            /* The nested "if" blocks in the comments below have been rewritten as follows to reduce
+               the code's cognitive complexity. */
             while a.is_none() && i <= 2u8 {
                 if i != 1u8 {
                     t1 = t1.substract(&rootdelta.unwrap());
@@ -126,9 +141,7 @@ impl <const N:usize> Fp2Element<N>{
                     if a.equal(&zero_c) {
                         Some(zero)
                     } else {
-                        Some(Self {
-                            content:[a, self.content[1].multiply(&a.addto(&a).invert())]
-                        })
+                        Some(Self::new(&[a, self.content[1].multiply(&a.addto(&a).invert())], None))
                     }
                 }
             }

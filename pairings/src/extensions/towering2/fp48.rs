@@ -31,7 +31,8 @@ fn get_slice_fp24<const PARAMSIZE:usize,const N:usize>(element : &Fp48Element<PA
                                                       }*/ element1)
         .collect::<Vec<_>>()
         .try_into().unwrap(); 
-             Fp24Element{content :_t, constants :element.constants}        
+             //Fp24Element{content :_t, constants :element.constants}
+             Fp24Element::new(&_t, Some(element.constants))
     }
 
 fn get_slice_fp8<const PARAMSIZE:usize,const N:usize>(element : &Fp48Element<PARAMSIZE,N>, i : usize) -> Fp8Element<PARAMSIZE,N>
@@ -42,7 +43,8 @@ fn get_slice_fp8<const PARAMSIZE:usize,const N:usize>(element : &Fp48Element<PAR
                                                       }*/ element1)
         .collect::<Vec<_>>()
         .try_into().unwrap(); 
-             Fp8Element{content :_t, constants :element.constants}        
+             //Fp8Element{content :_t, constants :element.constants}
+             Fp8Element::new(&_t, Some(element.constants))
     }
 
 impl<const PARAMSIZE:usize,const N: usize> ExtField<PARAMSIZE,48,N> for Fp48Field<PARAMSIZE,N> {    
@@ -82,8 +84,9 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,48,N> for Fp48El
         let mut result:[FieldElement<N>;48] = [self.content[0];48] ;
         result[..24].copy_from_slice(&x0.content);
         result[24..].copy_from_slice(&x1.content);
-        Self {  content : result,
-                constants : self.constants}
+        /*Self {  content : result,
+                constants : self.constants}*/
+        Self::new(&result, Some(self.constants))
     }
     
     fn sqr(&self) -> Self {
@@ -98,8 +101,9 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,48,N> for Fp48El
         let mut result:[FieldElement<N>;48] = [self.content[0];48];
         result[..24].copy_from_slice(&x0.content);
         result[24..].copy_from_slice(&x1.content);
-        Self {  content : result,
-                constants : self.constants}                                                                                                                                                    
+        /*Self {  content : result,
+                constants : self.constants}*/
+        Self::new(&result, Some(self.constants))
     }
 
     fn new(content :&[FieldElement<N>; 48], consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp48Element<PARAMSIZE,N>
@@ -113,8 +117,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp48Element <PARAMSIZE,N>{
         result[..24].copy_from_slice(&self.content[0..24]);
         let b = get_slice_fp24(&self, 1).negate();
         result[24..].copy_from_slice(&b.content);
-        Self {  content : result,
-                constants : self.constants}                                                                                                                                                            
+        /*Self {  content : result,
+                constants : self.constants} */
+        Self::new(&result, Some(self.constants))
     }
 
     fn frobinus_mode_1(&self, order :u8) -> Self {      
@@ -587,8 +592,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp48Element <PARAMSIZE,N>{
         let mut result:[FieldElement<N>;48]=[self.content[0];48];
         result[..24].copy_from_slice(&x0.content);
         result[24..].copy_from_slice(&x1.content);
-        Self {  content : result,
-                constants : self.constants}                                                                                                                                                    
+        /*Self {  content : result,
+                constants : self.constants}   */
+        Self::new(&result, Some(self.constants))
     }
 
     pub fn unisqr(&self) -> Self { 
@@ -625,8 +631,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp48Element <PARAMSIZE,N>{
         result[24..32].copy_from_slice(&a1.content);
         result[32..40].copy_from_slice(&a3.content);
         result[40..].copy_from_slice(&a5.content);        
-        Self {  content : result,
-                constants : self.constants}                                                                                                                                                    
+        /*Self {  content : result,
+                constants : self.constants}*/
+        Self::new(&result, Some(self.constants))
     }
     
     pub fn cyclotomic_power(&self, e:& dyn Exponent<N>, negative :bool, naf_repre:&Option<Vec<i8>>) -> Self {
@@ -730,8 +737,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp48Element <PARAMSIZE,N>{
         a = a.cyclotomic_power(&u, u_sign,&naf_u_repr);
         a = a.cyclotomic_power(&u, u_sign,&naf_u_repr);                
         a = t.multiply(&a);
-        a = a.multiply(&s).multiply(&s.unisqr()); 
-        a
+        /*a = a.multiply(&s).multiply(&s.unisqr());
+        a*/
+        a.multiply(&s).multiply(&s.unisqr())
     }
 
     pub fn sparse_multiply(&self, rhs:&[&[FieldElement<N>];3]) -> Self {    
@@ -750,8 +758,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp48Element <PARAMSIZE,N>{
         let mut result:[FieldElement<N>;48] = [self.content[0];48] ;
         for i in 0..24 { result[i] = t2.content[i].addto(&t0.content[i])}
         for i in 24..48 { result[i] = t3.content[i-24].substract(&t0.content[i-24]).substract(&t1.content[i-24])}        
-        Self {  content : result,
-                constants : self.constants}                                                                                                                                                    
+        /*Self {  content : result,
+                constants : self.constants}*/
+        Self::new(&result, Some(self.constants))
     }
     
 }

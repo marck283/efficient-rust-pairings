@@ -198,12 +198,22 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT:usize> G1Element<R,N,MAX
                 let mut p = self.point.clone();
                 p.to_affine();
                 let c_bit: u8 = 1;
-                let i_bit: u8 = if self.point.z.is_zero() {1} else {0};
+                //let i_bit: u8 = if self.point.z.is_zero() {1} else {0};
+                let i_bit: u8 = self.point.z.is_zero() as u8; // "1" if the condition is true, otherwise "0".
+
+                /* No need for s_bit to be of type "i8", since its minimum value is "0". We can
+                   declare it to be of type "u8". */
                 //let s_bit: i8 = if self.point.z.is_zero() {0} else {if self.point.y.sign()==1 {1} else {0}};
-                let s_bit: i8 = (i_bit != 1 && self.point.y.sign() == 1) as i8;
-                let m_byte: u8 = (c_bit << 7) | (i_bit << 6) | (((s_bit + 1) as u8 >> 1) << 5); // Leave this last part here because it could be trying to make the value even
+                let s_bit: u8 = (i_bit != 1 && self.point.y.sign() == 1) as u8; // Again, "1" if the condition is true, otherwise "0".
+
+                /* In the following line of code, the cast to "u8" is unnecessary and the "+ 1" is canceled by ">> 1", so we can remove
+                  them all. The only reason why we can remove the "+ 1" and the ">> 1" is because "s_bit + 1" has a maximum value of "2"
+                  (when s_bit = 1) and a minimum value of "1" (when s_bit = 0). Therefore, ">> 1" is equivalent to "- 1". */
+
+                //let m_byte: u8 = (c_bit << 7) | (i_bit << 6) | (((s_bit + 1) as u8 >> 1) << 5);
+                let m_byte: u8 = (c_bit << 7) | (i_bit << 6) | (s_bit << 5);
                 let numbits = self.point.x.fieldparams.num_of_bits;
-                //let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1};
+                //let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1}; // This was rewritten as in the following line to get rid of the "if" statement.
                 let sizeinbytes = (numbits >> 3) + (((numbits % 8) != 0) as usize);
                 let mut x_string = if self.point.z.is_zero() {i2osp(0, sizeinbytes)}
                                             else {i2osp_pf(&p.x, sizeinbytes)};
@@ -300,16 +310,22 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
              
         }
         pub fn random_point_withseed(&self,seed1 : FieldElement<N>) -> G1Element<R,N,MAX_COEFS_COUNT>
-            {   
-                let mut rp = self.map_to_curve(seed1);
-                rp = rp.multiply_by_const(self.consts.h1 as i128);
-                rp    
+            {
+                // We can avoid declaring "rp" as "mut" because we can simply return the result of
+                // "rp.multiply_by_const()" to the caller.
+                let /*mut*/ rp = self.map_to_curve(seed1);
+                //rp = rp.multiply_by_const(self.consts.h1 as i128);
+                rp.multiply_by_const(self.consts.h1 as i128)
             }
+
+        /// This function computes a random point with seed set to the base field's zero.
         pub fn random_point(&self) -> G1Element<R,N,MAX_COEFS_COUNT>
-            {   
-                let mut rp = self.map_to_curve(self.base_field.zero());
+            {
+                // This function's body was rewritten to prevent code duplication.
+                /*let mut rp = self.map_to_curve(self.base_field.zero());
                 rp = rp.multiply_by_const(self.consts.h1 as i128);                
-                rp.to_affine()    
+                rp.to_affine()  */
+                self.random_point_withseed(self.base_field.zero()).to_affine()
             }
         pub fn hash_to_field(&self,id :&str,mode :u8) -> G1Element<R,N,MAX_COEFS_COUNT> {
             //  mode=0: Encode to Curve (NU-encode-to-curve), mode=1: Random Oracle model (RO-hash-to-curve)
@@ -331,6 +347,7 @@ impl <const R:usize,const N:usize,const MAX_COEFS_COUNT : usize> G1Field<R,N,MAX
             let mut input = inbytes.clone();
             let m_byte = input[0] & 0xE0;
             let numbits = self.base_field.parametres.num_of_bits;
+            //let sizeinbytes = (numbits >> 3) + if (numbits % 8) ==0 {0} else {1}; // This line was rewritten to get rid of the "if" statement.s
             let sizeinbytes = (numbits >> 3) + (((numbits % 8) != 0) as usize);
             if self.consts.base_field_numbits % 8 <= 5 {
                 input[0] = input[0] & 0x1F;

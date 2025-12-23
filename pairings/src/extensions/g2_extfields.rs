@@ -62,7 +62,7 @@ impl <const N:usize, const PARAMSIZE:usize> ArithmeticOperations for ExtFieldG2E
                                 (ExtFieldG2Element::Fp8_2(x), ExtFieldG2Element::Fp8_2(y)) => x.substract(y).into(),
                                 (ExtFieldG2Element::Fp4_3(x), ExtFieldG2Element::Fp4_3(y)) => x.substract(y).into(),
                                 (ExtFieldG2Element::Fp8_3(x), ExtFieldG2Element::Fp8_3(y)) => x.substract(y).into(),
-                                _ => unimplemented!("Substractionnot implemented for different types"),
+                                _ => unimplemented!("Subtraction not implemented for different types"),
                             }
     }
     fn multiply(&self, other: &Self) -> Self {
@@ -74,7 +74,7 @@ impl <const N:usize, const PARAMSIZE:usize> ArithmeticOperations for ExtFieldG2E
                                 (ExtFieldG2Element::Fp8_2(x), ExtFieldG2Element::Fp8_2(y)) => x.multiply(y).into(),
                                 (ExtFieldG2Element::Fp4_3(x), ExtFieldG2Element::Fp4_3(y)) => x.multiply(y).into(),
                                 (ExtFieldG2Element::Fp8_3(x), ExtFieldG2Element::Fp8_3(y)) => x.multiply(y).into(),
-                                _ => unimplemented!("Addition not implemented for different types"),
+                                _ => unimplemented!("Multiplication not implemented for different types"),
                             }
     }
     fn sqr(&self) -> Self 
@@ -122,7 +122,7 @@ impl <const N:usize, const PARAMSIZE:usize> ArithmeticOperations for ExtFieldG2E
                                 (ExtFieldG2Element::Fp8_2(x), ExtFieldG2Element::Fp8_2(y)) => x.equal(y),
                                 (ExtFieldG2Element::Fp4_3(x), ExtFieldG2Element::Fp4_3(y)) => x.equal(y),
                                 (ExtFieldG2Element::Fp8_3(x), ExtFieldG2Element::Fp8_3(y)) => x.equal(y),
-                                _ => unimplemented!("Addition not implemented for different types"),
+                                _ => unimplemented!("Equality not implemented for different types"),
                             }
     }
     fn is_zero(&self) -> bool {
@@ -435,8 +435,9 @@ pub enum ExtG2Field <const N:usize, const PARAMSIZE:usize>
 impl <const PARAMSIZE:usize,const N: usize> ExtG2Field<N,PARAMSIZE> 
 {
     pub fn new(&self) -> ExtFieldG2Element<N,PARAMSIZE>
-    {   
-        match self {    ExtG2Field::Fp2_1(x) => x.random_element().into(),
+    {
+        // The body of this method was rewritten as follows to avoid code duplication
+        /*match self {    ExtG2Field::Fp2_1(x) => x.random_element().into(),
                         ExtG2Field::Fp4_1(x)=> x.random_element().into(),
                         ExtG2Field::Fp8_1(x)=> x.random_element().into(),
                         ExtG2Field::Fp2_2(x) => x.random_element().into(),
@@ -444,7 +445,8 @@ impl <const PARAMSIZE:usize,const N: usize> ExtG2Field<N,PARAMSIZE>
                         ExtG2Field::Fp8_2(x)=> x.random_element().into(),
                         ExtG2Field::Fp4_3(x)=> x.random_element().into(),
                         ExtG2Field::Fp8_3(x)=> x.random_element().into(),
-                    }       
+                    }       */
+        self.random_element()
     }
 
     pub fn random_element(&self) -> ExtFieldG2Element<N,PARAMSIZE>

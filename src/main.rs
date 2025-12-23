@@ -91,10 +91,12 @@ fn run_chosen_action<const R:usize,const N:usize,const MAX_COEFS_COUNT1:usize,co
     1 => {println!("Runtime Bench-marking\n");
           check_and_benchmark(engine)  },
     2 => {println!("BLS Signature demonstration :\n");
-          bls_signature_scheme(BLS12::_381())  },
+          //bls_signature_scheme(BLS12::_381())  }, // This allows testing for just one BLS curve.
+          bls_signature_scheme(engine)  }, // Proposed fix: give the curve's configuration directly to the bls_signature_scheme() method call.
     3 => {println!("Boneh-Franklin IBE demonstration :\n");
-          boneh_franklin_ibe(BLS12::_461())   },
-    4 =>{println!("Exiting the program. Goodbye!");            
+          //boneh_franklin_ibe(BLS12::_461())   }, // This also allows testing for just one BLS curve.
+          boneh_franklin_ibe(engine)   }, // Proposed fix: as for choice 2, give the curve's configuration directly to the boneh_franklin_ibe() method call.
+    4 =>{println!("Exiting the program. Goodbye!");
         },
     _ => println!("Invalid choice. Please enter 1, 2, or 3."),
   }
