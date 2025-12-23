@@ -137,7 +137,6 @@ impl <const N:usize> Fp2Element<N>{
             match a {
                 None => None,
                 Some(a) => {
-                    //if a.equal(&FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}) {
                     if a.equal(&zero_c) {
                         Some(zero)
                     } else {
