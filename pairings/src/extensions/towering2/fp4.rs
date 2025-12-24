@@ -30,9 +30,13 @@ impl<const PARAMSIZE:usize,const N: usize> ExtField<PARAMSIZE,4,N> for Fp4Field<
         Some(self.constants)
     }
 
-    fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) ->  Fp4Field<PARAMSIZE,N>
-        { Fp4Field {base_field : (*base_field).clone(), constants: consts.unwrap()}}
+    fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) ->  Fp4Field<PARAMSIZE,N> {
+        Fp4Field {
+            base_field: (*base_field).clone(),
+            constants: consts.unwrap()
+        }
     }
+}
 
 impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,4,N> for Fp4Element<PARAMSIZE,N>{
     fn content_interface(&self) -> &[FieldElement<N>;4]
@@ -43,64 +47,89 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,4,N> for Fp4Elem
     }
 
     fn multiply(&self, rhs:&Self) -> Self {
-        let a0 = Fp2Element{content :[self.content[0],self.content[1]], constants:self.constants };
-        let b0 = Fp2Element{content :[self.content[2],self.content[3]], constants:self.constants };
-        let a1 = Fp2Element{content :[rhs.content[0],rhs.content[1]], constants:self.constants };
-        let b1 = Fp2Element{content :[rhs.content[2],rhs.content[3]], constants:self.constants };
+        let (a0, b0) = self.get_a_b();
+        /*let a0 = Fp2Element{content :[self.content[0],self.content[1]], constants:self.constants };
+        let b0 = Fp2Element{content :[self.content[2],self.content[3]], constants:self.constants };*/
+        //let a1 = Fp2Element{content :[rhs.content[0],rhs.content[1]], constants:self.constants };
+        let a1 = Fp2Element::new(&[rhs.content[0], rhs.content[1]], Some(self.constants));
+        //let b1 = Fp2Element{content :[rhs.content[2],rhs.content[3]], constants:self.constants };
+        let b1 = Fp2Element::new(&[rhs.content[2], rhs.content[3]], Some(self.constants));
         let t0 = a0.multiply(&a1);
         let t1 = b0.multiply(&b1);
         let a  = t0.addto(&t1.mul_by_u());
         //let b  = a0.addto(&b0).multiply(&a1.addto(&b1)).substract(&t0).substract(&t1);
         let b  = a0.multiply(&b1).addto(&b0.multiply(&a1));
-        Self { content : [a.content[0],a.content[1],b.content[0],b.content[1]],
-               constants :self.constants  }
+        /*Self { content : [a.content[0],a.content[1],b.content[0],b.content[1]],
+               constants :self.constants  }*/
+        Self::new(&[a.content[0],a.content[1],b.content[0],b.content[1]], Some(self.constants))
     }
 
     fn sqr(&self) -> Self {
-        let a = Fp2Element{content :[self.content[0],self.content[1]], constants:self.constants };
-        let b = Fp2Element{content :[self.content[2],self.content[3]], constants:self.constants };
+        let (a, b) = self.get_a_b();
+        /*let a = Fp2Element{content :[self.content[0],self.content[1]], constants:self.constants };
+        let b = Fp2Element{content :[self.content[2],self.content[3]], constants:self.constants };*/
         let v0= a.sqr();
         let v1= b.sqr();
         //let b = a.addto(&b).sqr().substract(&v0).substract(&v1);
         let b = a.multiply(&b).double();
         let a = v0.addto(&v1.mul_by_u());
-        Self { content : [a.content[0],a.content[1],b.content[0],b.content[1]],
-               constants :self.constants  }
+        /*Self { content : [a.content[0],a.content[1],b.content[0],b.content[1]],
+               constants :self.constants  }*/
+        Self::new(&[a.content[0],a.content[1],b.content[0],b.content[1]], Some(self.constants))
     }
 
-    fn new(content :&[FieldElement<N>; 4], consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp4Element<PARAMSIZE,N>
-        {   Fp4Element{content :content.clone(), constants :consts.unwrap()}    }
+    fn new(content :&[FieldElement<N>; 4], consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp4Element<PARAMSIZE,N> {
+        Fp4Element {
+            content: content.clone(),
+            constants: consts.unwrap()
+        }
+    }
 
 }
 
 impl <const PARAMSIZE:usize,const N:usize> Fp4Element <PARAMSIZE,N>{
 
     pub fn conjugate(&self) -> Self {
-        Self {content : [self.content[0] , self.content[1], self.content[2].negate(), self.content[3].negate()],
-              constants : self.constants}
+        /*Self {content : [self.content[0] , self.content[1], self.content[2].negate(), self.content[3].negate()],
+              constants : self.constants}*/
+        Self::new(&[self.content[0], self.content[1], self.content[2].negate(), self.content[3].negate()],
+            Some(self.constants))
+    }
+
+    fn get_a_b(&self) -> (Fp2Element<PARAMSIZE, N>, Fp2Element<PARAMSIZE, N>) {
+        let a = Fp2Element::new(&[self.content[0],self.content[1]], Some(self.constants));
+        let b = Fp2Element::new(&[self.content[2],self.content[3]], Some(self.constants));
+
+        (a, b)
     }
 
     pub fn frobinus(&self) -> Self {
-        Self {  content : [self.content[0] , 
+        /*Self {  content : [self.content[0] ,
                            self.content[1].negate(), 
                            self.content[2].multiply(&self.constants.frobinus_consts[0]), 
                            self.content[3].negate().multiply(&self.constants.frobinus_consts[0])],
-                constants : self.constants}
+                constants : self.constants}*/
+        Self::new(&[self.content[0], self.content[1].negate(),
+            self.content[2].multiply(&self.constants.frobinus_consts[0]),
+            self.content[3].negate().multiply(&self.constants.frobinus_consts[0])], Some(self.constants))
     }   
  
-    pub fn invert(&self) -> Self{        
-        let a = Fp2Element::new(&[self.content[0],self.content[1]], Some(self.constants));
-        let b = Fp2Element::new(&[self.content[2],self.content[3]], Some(self.constants));
+    pub fn invert(&self) -> Self{
+        let (a, b) = self.get_a_b();
+        /*let a = Fp2Element::new(&[self.content[0],self.content[1]], Some(self.constants));
+        let b = Fp2Element::new(&[self.content[2],self.content[3]], Some(self.constants));*/
         let t = a.sqr().substract(&b.sqr().mul_by_u()).invert();               
         let a = a.multiply(&t);
         let b = b.multiply(&t).negate();
-        Self { content : [a.content[0],a.content[1],b.content[0],b.content[1]],
-            constants :self.constants  }      
+        /*Self { content : [a.content[0],a.content[1],b.content[0],b.content[1]],
+            constants :self.constants  }*/
+        Self::new(&[a.content[0], a.content[1], b.content[0], b.content[1]], Some(self.constants))
     }
 
     pub fn is_qr(&self) -> bool {
-        let a = Fp2Element::new(&[self.content[0],self.content[1]], Some(self.constants));
-        let b = Fp2Element::new(&[self.content[2],self.content[3]], Some(self.constants));
+        let (a, b) = self.get_a_b();
+        /*let a = Fp2Element::new(&[self.content[0],self.content[1]], Some(self.constants));
+        let b = Fp2Element::new(&[self.content[2],self.content[3]], Some(self.constants));*/
         a.sqr().substract(&b.sqr().mul_by_u()).is_qr()
     }
 
@@ -111,10 +140,10 @@ impl <const PARAMSIZE:usize,const N:usize> Fp4Element <PARAMSIZE,N>{
         /*let zero = Self{  content:[FieldElement{mont_limbs:outparams.zero,fieldparams:outparams};4],
                                               constants : self.constants};*/
         let zero_c = FieldElement::new(outparams, &outparams.zero);
-        let zero = Self{  content:[zero_c; 4],
-                                              constants : self.constants};
-        let a = Fp2Element{content :[self.content[0],self.content[1]], constants:self.constants};
-        let b = Fp2Element{content :[self.content[2],self.content[3]], constants:self.constants };
+        let zero = Self::new(&[zero_c; 4], Some(self.constants));
+        let (a, b) = self.get_a_b();
+        /*let a = Fp2Element{content :[self.content[0],self.content[1]], constants:self.constants};
+        let b = Fp2Element{content :[self.content[2],self.content[3]], constants:self.constants };*/
         let rootdelta: Option<Fp2Element<PARAMSIZE,N>> = a.sqr().substract(&b.sqr().mul_by_u()).sqrt();
         if rootdelta.is_some() {
             let rootdelta = rootdelta.unwrap();
@@ -152,10 +181,8 @@ impl <const PARAMSIZE:usize,const N:usize> Fp4Element <PARAMSIZE,N>{
                         Some(zero)
                     } else {
                         let t = b.multiply(&r.double().invert());
-                        Some(Self {
-                            content: [r.content[0], r.content[1], t.content[0],t.content[1]],
-                            constants: self.constants
-                        })
+                        Some(Self::new(&[r.content[0], r.content[1], t.content[0], t.content[1]],
+                            Some(self.constants)))
                     }
                 }
             }
@@ -180,8 +207,10 @@ impl <const PARAMSIZE:usize,const N:usize> Fp4Element <PARAMSIZE,N>{
     }
     
     pub fn mulby_v(&self) -> Self {
-            Fp4Element {content : [self.content[3].multiply(&self.constants.base_qnr), self.content[2],self.content[0], self.content[1]],                                                                                                                                                             
-                        constants : self.constants}
+            /*Fp4Element {content : [self.content[3].multiply(&self.constants.base_qnr), self.content[2],self.content[0], self.content[1]],
+                        constants : self.constants}*/
+            Fp4Element::new(&[self.content[3].multiply(&self.constants.base_qnr), self.content[2],self.content[0], self.content[1]],
+                Some(self.constants))
 
         }
     }

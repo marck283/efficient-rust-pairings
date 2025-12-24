@@ -28,9 +28,12 @@ impl<const PARAMSIZE:usize,const N: usize> ExtField<PARAMSIZE,2,N> for Fp2Field<
         None
     }
 
-    fn new(base_field :&Self::BaseFieldType,_consts :Option<&ExFieldConsts<PARAMSIZE,N>>)->  Fp2Field<N>
-        { Fp2Field {base_field : (*base_field).clone()}}   
+    fn new(base_field :&Self::BaseFieldType,_consts :Option<&ExFieldConsts<PARAMSIZE,N>>)->  Fp2Field<N> {
+        Fp2Field {
+            base_field: (*base_field).clone()
+        }
     }
+}
 
 
 impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,2,N> for Fp2Element<PARAMSIZE,N>{
@@ -44,36 +47,45 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,2,N> for Fp2Elem
     fn multiply(&self, rhs:&Self) -> Self {
         let v0 =self.content[0].multiply(&rhs.content[0]);
         let v1 =self.content[1].multiply(&rhs.content[1]);
-        Self {content : [v0.addto(&v1.multiply(&self.constants.base_qnr)),
-            self.content[0].multiply(&rhs.content[1]).addto(&self.content[1].multiply(&rhs.content[0]))
-            /*self.content[0].addto(&self.content[1]).multiply(
-                            &rhs.content[0].addto(&rhs.content[1])).substract(&v0).substract(&v1)*/
+        /*Self {content : [v0.addto(&v1.multiply(&self.constants.base_qnr)),
+            self.content[0].addto(&self.content[1]).multiply(
+                            &rhs.content[0].addto(&rhs.content[1])).substract(&v0).substract(&v1)
                                     ],
-              constants :self.constants}
+              constants :self.constants}*/
+        Self::new(&[v0.addto(&v1.multiply(&self.constants.base_qnr)),
+            self.content[0].multiply(&rhs.content[1]).addto(&self.content[1].multiply(&rhs.content[0]))],
+        Some(self.constants))
     }
 
     fn sqr(&self) -> Self {
         let v0 =self.content[0].sqr();
         let v1 =self.content[1].sqr();  
         let v2 =self.content[0].multiply(&self.content[1]);
-        Self {content : [v0.addto(&v1.multiply(&self.constants.base_qnr)), v2.addto(&v2)], constants :self.constants}
+        //Self {content : [v0.addto(&v1.multiply(&self.constants.base_qnr)), v2.addto(&v2)], constants :self.constants}
+        Self::new(&[v0.addto(&v1.multiply(&self.constants.base_qnr)), v2.addto(&v2)], Some(self.constants))
     }
 
-    fn new(content :&[FieldElement<N>; 2],consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp2Element<PARAMSIZE,N>
-        {   Fp2Element{content :content.clone(), constants :consts.unwrap()}    }
+    fn new(content :&[FieldElement<N>; 2],consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp2Element<PARAMSIZE,N> {
+        Fp2Element {
+            content: content.clone(),
+            constants: consts.unwrap()
+        }
+    }
 
 }
 
 impl <const PARAMSIZE:usize,const N:usize> Fp2Element<PARAMSIZE, N>{
     
     pub fn mul_by_u(&self) -> Self {
-        Self {content : [self.content[1].multiply(&self.constants.base_qnr),self.content[0]],
-              constants :self.constants}
+        /*Self {content : [self.content[1].multiply(&self.constants.base_qnr),self.content[0]],
+              constants :self.constants}*/
+        Self::new(&[self.content[1].multiply(&self.constants.base_qnr),self.content[0]], Some(self.constants))
 
     } 
     pub fn conjugate(&self) -> Self {
-        Self {content   :   [self.content[0] , self.content[1].negate()],
-              constants :   self.constants}
+        /*Self {content   :   [self.content[0] , self.content[1].negate()],
+              constants :   self.constants}*/
+        Self::new(&[self.content[0] , self.content[1].negate()], Some(self.constants))
     }
 
     pub fn frobinus(&self) -> Self {
@@ -82,8 +94,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp2Element<PARAMSIZE, N>{
     }   
     pub fn invert(&self) -> Self{
         let  t = self.content[0].sqr().substract(&self.content[1].sqr().multiply(&self.constants.base_qnr)).invert();
-        Self {content :[self.content[0].multiply(&t), self.content[1].multiply(&t).negate()],
-              constants :self.constants  }
+        /*Self {content :[self.content[0].multiply(&t), self.content[1].multiply(&t).negate()],
+              constants :self.constants  }*/
+        Self::new(&[self.content[0].multiply(&t), self.content[1].multiply(&t).negate()], Some(self.constants))
     }
     
     pub fn is_qr(&self) -> bool{
@@ -99,8 +112,7 @@ impl <const PARAMSIZE:usize,const N:usize> Fp2Element<PARAMSIZE, N>{
                                                     FieldElement{mont_limbs:outparams.zero,fieldparams:outparams}],
                                                   constants :self.constants  };*/
         let zero_c = FieldElement::new(outparams, &outparams.zero);
-        let zero =Self {content:[ zero_c; 2],
-                                                  constants :self.constants  };
+        let zero = Self::new(&[zero_c; 2], Some(self.constants));
         let rootdelta = self.content[0].sqr().substract(&self.content[1].sqr().multiply(&self.constants.base_qnr)).sqrt();
         match rootdelta {
             None => None,
@@ -126,10 +138,8 @@ impl <const PARAMSIZE:usize,const N:usize> Fp2Element<PARAMSIZE, N>{
                         if a.equal(&zero_c) {
                             Some(zero)
                         } else {
-                            Some(Self {
-                                content:[a, self.content[1].multiply(&a.addto(&a).invert())],
-                                constants :self.constants
-                            })
+                            Some(Self::new(&[a, self.content[1].multiply(&a.addto(&a).invert())],
+                                           Some(self.constants)))
                         }
                     }
                 }

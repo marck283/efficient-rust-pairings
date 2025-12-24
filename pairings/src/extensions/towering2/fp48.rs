@@ -58,9 +58,13 @@ impl<const PARAMSIZE:usize,const N: usize> ExtField<PARAMSIZE,48,N> for Fp48Fiel
         Some(self.constants)
     }
 
-    fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>)->  Fp48Field<PARAMSIZE,N>
-        { Fp48Field {base_field : (*base_field).clone(), constants: consts.unwrap()}}
+    fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>)->  Fp48Field<PARAMSIZE,N> {
+        Fp48Field {
+            base_field: (*base_field).clone(),
+            constants: consts.unwrap()
+        }
     }
+}
 
 impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,48,N> for Fp48Element<PARAMSIZE,N>{
     fn content_interface(&self) -> &[FieldElement<N>;48]
@@ -106,8 +110,12 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,48,N> for Fp48El
         Self::new(&result, Some(self.constants))
     }
 
-    fn new(content :&[FieldElement<N>; 48], consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp48Element<PARAMSIZE,N>
-        {   Fp48Element{content :content.clone(), constants :consts.unwrap()}    }
+    fn new(content :&[FieldElement<N>; 48], consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp48Element<PARAMSIZE,N> {
+        Fp48Element {
+            content: content.clone(),
+            constants: consts.unwrap()
+        }
+    }
 }
 
 impl <const PARAMSIZE:usize,const N:usize> Fp48Element <PARAMSIZE,N>{
