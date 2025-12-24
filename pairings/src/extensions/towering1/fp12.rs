@@ -353,13 +353,20 @@ impl <const PARAMSIZE:usize,const N:usize> Fp12Element <PARAMSIZE,N>{
         get_fp_12_element(self, &x0, &x1)
     }
     
-    pub fn unisqr(&self) -> Self { 
-        let a0= Fp2Element{content :[self.content[0],self.content[1]]};
-        let a1= Fp2Element{content :[self.content[2],self.content[3]]};
-        let a2= Fp2Element{content :[self.content[4],self.content[5]]};
-        let a3= Fp2Element{content :[self.content[6],self.content[7]]};
-        let a4= Fp2Element{content :[self.content[8],self.content[9]]};
-        let a5= Fp2Element{content :[self.content[10],self.content[11]]};
+    pub fn unisqr(&self) -> Self {
+        // TODO: change these lines to use "new()"
+        //let a0= Fp2Element{content :[self.content[0],self.content[1]]};
+        let a0 = Fp2Element::new(&[self.content[0], self.content[1]], None);
+        //let a1= Fp2Element{content :[self.content[2],self.content[3]]};
+        let a1 = Fp2Element::new(&[self.content[2], self.content[3]], None);
+        //let a2= Fp2Element{content :[self.content[4],self.content[5]]};
+        let a2 = Fp2Element::new(&[self.content[4], self.content[5]], None);
+        //let a3= Fp2Element{content :[self.content[6],self.content[7]]};
+        let a3 = Fp2Element::new(&[self.content[6], self.content[7]], None);
+        //let a4= Fp2Element{content :[self.content[8],self.content[9]]};
+        let a4 = Fp2Element::new(&[self.content[8], self.content[9]], None);
+        //let a5= Fp2Element{content :[self.content[10],self.content[11]]};
+        let a5 = Fp2Element::new(&[self.content[10], self.content[11]], None);
         let x0 = a0.sqr();
         let x1 = a4.sqr();
         //let x2 = a0.addto(&a4);
@@ -470,8 +477,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp12Element <PARAMSIZE,N>{
         a = a.cyclotomic_power(&u, u_sign, &naf_u_repr);
         a = a.cyclotomic_power(&u,u_sign, &naf_u_repr);
         a = t.multiply(&a);
-        a = a.multiply(&s).multiply(&s.unisqr()); 
-        a
+        /*a = a.multiply(&s).multiply(&s.unisqr());
+        a*/
+        a.multiply(&s).multiply(&s.unisqr())
     }
    
     pub fn sparse_multiply(&self, rhs:&[&[FieldElement<N>];3]) -> Self {     
@@ -485,9 +493,12 @@ impl <const PARAMSIZE:usize,const N:usize> Fp12Element <PARAMSIZE,N>{
                                                                                 &[rhs[0][0].zero(),rhs[0][0].zero()]], 0);                
         let x0 = t1.mul_by_u().addto(&t0);                                      
         let x1 = t2.substract(&t0).substract(&t1);
-        Self {  content : [x0.content[0], x0.content[1],x0.content[2],x0.content[3],x0.content[4],x0.content[5],
+        /*Self {  content : [x0.content[0], x0.content[1],x0.content[2],x0.content[3],x0.content[4],x0.content[5],
                            x1.content[0], x1.content[1],x1.content[2],x1.content[3],x1.content[4],x1.content[5]],
-                constants : self.constants}  
+                constants : self.constants}*/
+        Self::new(&[x0.content[0], x0.content[1],x0.content[2],x0.content[3],x0.content[4],x0.content[5],
+            x1.content[0], x1.content[1],x1.content[2],x1.content[3],x1.content[4],x1.content[5]],
+                Some(self.constants))
     }    
 }
 

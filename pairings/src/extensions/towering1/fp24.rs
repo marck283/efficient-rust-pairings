@@ -32,8 +32,9 @@ fn get_slice_fp8<const PARAMSIZE:usize,const N:usize>(element : &Fp24Element<PAR
                                                       }*/
             element1)
         .collect::<Vec<_>>()
-        .try_into().unwrap(); 
-        Fp8Element{content :_t, constants :element.constants}        
+        .try_into().unwrap();
+        Fp8Element::new(&_t, Some(element.constants))
+        //Fp8Element{content :_t, constants :element.constants}
     }
 
 fn get_slice_fp4<const PARAMSIZE:usize,const N:usize>(element : &Fp24Element<PARAMSIZE,N>, i : usize) -> Fp4Element<PARAMSIZE,N>
@@ -44,8 +45,9 @@ fn get_slice_fp4<const PARAMSIZE:usize,const N:usize>(element : &Fp24Element<PAR
                                                       }*/
             element1)
         .collect::<Vec<_>>()
-        .try_into().unwrap(); 
-        Fp4Element{content :_t, constants :element.constants}        
+        .try_into().unwrap();
+        Fp4Element::new(&_t, Some(element.constants))
+        //Fp4Element{content :_t, constants :element.constants}
     }
 
 impl<const PARAMSIZE:usize,const N: usize> ExtField<PARAMSIZE,24,N> for Fp24Field<PARAMSIZE,N> {    
@@ -59,9 +61,13 @@ impl<const PARAMSIZE:usize,const N: usize> ExtField<PARAMSIZE,24,N> for Fp24Fiel
         Some(self.constants)
     }
 
-    fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>)->  Fp24Field<PARAMSIZE,N>
-        { Fp24Field {base_field : (*base_field).clone(), constants: consts.unwrap()}}
+    fn new(base_field :&Self::BaseFieldType, consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>)->  Fp24Field<PARAMSIZE,N> {
+        Fp24Field {
+            base_field: (*base_field).clone(),
+            constants: consts.unwrap()
+        }
     }
+}
 
 impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,24,N> for Fp24Element<PARAMSIZE,N>{
     fn content_interface(&self) -> &[FieldElement<N>;24]
@@ -93,7 +99,8 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,24,N> for Fp24El
         result[..8].copy_from_slice(&h0.content);
         result[8..16].copy_from_slice(&h1.content);
         result[16..].copy_from_slice(&h2.content);
-        Self {  content : result, constants :self.constants}
+        //Self {  content : result, constants :self.constants}
+        Self::new(&result, Some(self.constants))
     }
     
     fn sqr(&self) -> Self {
@@ -115,7 +122,8 @@ impl <const PARAMSIZE:usize,const N:usize> ExtElement<PARAMSIZE,24,N> for Fp24El
         result[..8].copy_from_slice(&h0.content);
         result[8..16].copy_from_slice(&h1.content);
         result[16..].copy_from_slice(&h2.content);
-            Self {  content : result, constants :self.constants}
+            //Self {  content : result, constants :self.constants}
+        Self::new(&result, Some(self.constants))
         }
 
     fn new(content :&[FieldElement<N>; 24], consts :Option<&'static ExFieldConsts<PARAMSIZE,N>>) -> Fp24Element<PARAMSIZE,N>
@@ -232,7 +240,8 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
         result[..8].copy_from_slice(&t0.multiply(&t3).content);
         result[8..16].copy_from_slice(&t1.multiply(&t3).content);
         result[16..].copy_from_slice(&t2.multiply(&t3).content);
-        Self {  content : result, constants :self.constants} 
+        //Self {  content : result, constants :self.constants}
+        Self::new(&result, Some(self.constants))
     }
 
     pub fn unisqr(&self) -> Self {
@@ -269,14 +278,17 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
        result[12..16].copy_from_slice(&h11.content);
        result[16..20].copy_from_slice(&h20.content);
        result[20..].copy_from_slice(&h21.content);
-       Self {  content : result, constants :self.constants} 
+       //Self {  content : result, constants :self.constants}
+        Self::new(&result, Some(self.constants))
     }
     
     pub fn cyclotomic_power(&self, e:& dyn Exponent<N>, negative :bool,naf_repre:&Option<Vec<i8>>) -> Self {
-        let one = FieldElement{mont_limbs:self.content[0].fieldparams.one,
-                                                fieldparams:self.content[0].fieldparams};
-        let zero = FieldElement{mont_limbs:[0;N],
-                                                 fieldparams:self.content[0].fieldparams};        
+        /*let one = FieldElement{mont_limbs:self.content[0].fieldparams.one,
+                                                fieldparams:self.content[0].fieldparams};*/
+        let one = FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.one);
+        /*let zero = FieldElement{mont_limbs:[0;N],
+                                                 fieldparams:self.content[0].fieldparams};*/
+        let zero = FieldElement::new(&self.content[0].fieldparams, &[0; N]);
         let mut result: [FieldElement<N>; 24] =[zero;24] ;
         result [0] = one; 
         let mut result = Self::new(&result,self.constants_interface());
@@ -361,8 +373,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
         a = a.cyclotomic_power(&u, u_sign,&naf_u_repr);
         a = a.cyclotomic_power(&u, u_sign, &naf_u_repr);
         a = t.multiply(&a);
-        a = a.multiply(&s).multiply(&s.unisqr());
-        a
+        /*a = a.multiply(&s).multiply(&s.unisqr());
+        a*/
+        a.multiply(&s).multiply(&s.unisqr())
     }
 
     pub fn mulby_z(&self) -> Self{
@@ -373,8 +386,9 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
         result[3] = self.content[21];
         result[4..8].copy_from_slice(&self.content[16..20]);
         result[8..24].copy_from_slice(&self.content[0..16]);
-        Fp24Element {content : result,
-                     constants : self.constants}
+        /*Fp24Element {content : result,
+                     constants : self.constants}*/
+        Fp24Element::new(&result, Some(self.constants))
     }
 
     pub fn sparse_multiply(&self, rhs:&[&[FieldElement<N>];3],twist_type:char) -> Self {
@@ -383,86 +397,132 @@ impl <const PARAMSIZE:usize,const N:usize> Fp24Element <PARAMSIZE,N>{
             let mut result =[FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
             let res1 :  Fp8Element<PARAMSIZE, N>;     
             let res2 :  Fp8Element<PARAMSIZE, N>;     
-            let res3 :  Fp8Element<PARAMSIZE, N>;     
+            let res3 :  Fp8Element<PARAMSIZE, N>;
+            let a0 = get_slice_fp8(&self, 0);
+            let b0 = get_slice_fp8(&self, 1);
+            let c0 = get_slice_fp8(&self, 2);
             if twist_type =='D'{
                 //  D-type sparse multiplication of an Fp24 element with a sparse element 
                 //  used during pairings on BLS24 () , rhs on 12 Fp element 
-            let a0 = get_slice_fp8(&self, 0);        
-            let b0 = get_slice_fp8(&self, 1);
-            let c0 = get_slice_fp8(&self, 2);
-            let y0 = Fp8Element{ content :[rhs[0][0],rhs[0][1],rhs[0][2],rhs[0][3],rhs[1][0],rhs[1][1],rhs[1][2],rhs[1][3]], constants:self.constants};
-            let y1 = Fp8Element{ content :[rhs[2][0],rhs[2][1],rhs[2][2],rhs[2][3],rhs[2][0].zero(),rhs[2][0].zero(),rhs[2][0].zero(),rhs[2][0].zero()], 
-                                                            constants:self.constants};
-            let t0 = a0.multiply(&y0);
-            let t1 = b0.sparse_multiply(&rhs[2]);
-            let t2 = c0.sparse_multiply(&rhs[2]);
-            res1 = t2.mulby_w().addto(&t0);
-            res2 = a0.addto(&b0).multiply(&y0.addto(&y1)).substract(&t0).substract(&t1);
-            res3 = c0.multiply(&y0).addto(&t1);                       
+                /*let a0 = get_slice_fp8(&self, 0);
+                let b0 = get_slice_fp8(&self, 1);
+                let c0 = get_slice_fp8(&self, 2);*/
+                //let y0 = Fp8Element{ content :[rhs[0][0],rhs[0][1],rhs[0][2],rhs[0][3],rhs[1][0],rhs[1][1],rhs[1][2],rhs[1][3]], constants:self.constants};
+                let y0 = Fp8Element::new(&[rhs[0][0],rhs[0][1],rhs[0][2],rhs[0][3],rhs[1][0],rhs[1][1],rhs[1][2],rhs[1][3]],
+                                         Some(self.constants));
+                /*let y1 = Fp8Element{ content :[rhs[2][0],rhs[2][1],rhs[2][2],rhs[2][3],rhs[2][0].zero(),rhs[2][0].zero(),rhs[2][0].zero(),rhs[2][0].zero()],
+                                                                constants:self.constants};*/
+                let y1 = Fp8Element::new(&[rhs[2][0],rhs[2][1],rhs[2][2],rhs[2][3],rhs[2][0].zero(),rhs[2][0].zero(),rhs[2][0].zero(),rhs[2][0].zero()],
+                                        Some(self.constants));
+                let t0 = a0.multiply(&y0);
+                let t1 = b0.sparse_multiply(&rhs[2]);
+                let t2 = c0.sparse_multiply(&rhs[2]);
+                //let res1 = t2.mulby_w().addto(&t0);
+                res1 = t2.mulby_w().addto(&t0);
+                //let res2 = a0.addto(&b0).multiply(&y0.addto(&y1)).substract(&t0).substract(&t1);
+                res2 = a0.addto(&b0).multiply(&y0.addto(&y1)).substract(&t0).substract(&t1);
+                //let res3 = c0.multiply(&y0).addto(&t1);
+                res3 = c0.multiply(&y0).addto(&t1);
+                /*result[..8].copy_from_slice(&res1.content);
+                result[8..16].copy_from_slice(&res2.content);
+                result[16..].copy_from_slice(&res3.content);
+                Self {  content : result, constants :self.constants}*/
             }
 
             else {  //  M-type sparse multiplication of an Fp24 element with a sparse element 
                     //  used during pairings on BLS24 () , rhs on 12 Fp element 
-                    let a0 = get_slice_fp8(&self, 0);
-                    let a1 = Fp8Element{ content :[rhs[0][0],rhs[0][1],rhs[0][2],rhs[0][3],rhs[2][0],rhs[2][1],rhs[2][2],rhs[2][3]], constants:self.constants};
-                    let b0 = get_slice_fp8(&self, 1);
-                    let c0 = get_slice_fp8(&self, 2);
-                    let c1 = Fp8Element{ content :[rhs[1][0],rhs[1][1],rhs[1][2],rhs[1][3],rhs[1][0].zero(),
-                                                                             rhs[1][0].zero(),rhs[1][0].zero(),rhs[1][0].zero()], constants:self.constants};
+                    //let a0 = get_slice_fp8(&self, 0);
+                    //let a1 = Fp8Element{ content :[rhs[0][0],rhs[0][1],rhs[0][2],rhs[0][3],rhs[2][0],rhs[2][1],rhs[2][2],rhs[2][3]], constants:self.constants};
+                    let a1 = Fp8Element::new(&[rhs[0][0],rhs[0][1],rhs[0][2],rhs[0][3],rhs[2][0],rhs[2][1],rhs[2][2],rhs[2][3]],
+                                             Some(self.constants));
+                    /*let b0 = get_slice_fp8(&self, 1);
+                    let c0 = get_slice_fp8(&self, 2);*/
+                    /*let c1 = Fp8Element{ content :[rhs[1][0],rhs[1][1],rhs[1][2],rhs[1][3],rhs[1][0].zero(),
+                                                                             rhs[1][0].zero(),rhs[1][0].zero(),rhs[1][0].zero()], constants:self.constants};*/
+                    let c1 = Fp8Element::new(&[rhs[1][0],rhs[1][1],rhs[1][2],rhs[1][3],rhs[1][0].zero(),
+                        rhs[1][0].zero(),rhs[1][0].zero(),rhs[1][0].zero()], Some(self.constants));
                     let t0 = a0.multiply(&a1);
                     let t2 = c0.sparse_multiply(&[rhs[1][0],rhs[1][1],rhs[1][2],rhs[1][3]]);
-                    res1 = b0.sparse_multiply(&[rhs[1][0],rhs[1][1],rhs[1][2],rhs[1][3]]).mulby_w().addto(&t0);        
+                    //let res1 = b0.sparse_multiply(&[rhs[1][0],rhs[1][1],rhs[1][2],rhs[1][3]]).mulby_w().addto(&t0);
+                    res1 = b0.sparse_multiply(&[rhs[1][0],rhs[1][1],rhs[1][2],rhs[1][3]]).mulby_w().addto(&t0);
+                    //let res2 = t2.mulby_w().addto(&b0.multiply(&a1));
                     res2 = t2.mulby_w().addto(&b0.multiply(&a1));
-                    res3 = a0.addto(&c0).multiply(&a1.addto(&c1)).substract(&t0).substract(&t2);                
+                    //let res3 = a0.addto(&c0).multiply(&a1.addto(&c1)).substract(&t0).substract(&t2);
+                    res3 = a0.addto(&c0).multiply(&a1.addto(&c1)).substract(&t0).substract(&t2);
+                    /*result[..8].copy_from_slice(&res1.content);
+                    result[8..16].copy_from_slice(&res2.content);
+                    result[16..].copy_from_slice(&res3.content);
+                    Self {  content : result, constants :self.constants}*/
             }
             result[..8].copy_from_slice(&res1.content);
             result[8..16].copy_from_slice(&res2.content);
             result[16..].copy_from_slice(&res3.content);
-            Self {  content : result, constants :self.constants}     
+            Self::new(&result, Some(self.constants))
     }
                 
-    pub fn sparse_multiply_for48(&self, rhs:&[&[FieldElement<N>];3], mode :u8) -> Self {         
+    pub fn sparse_multiply_for48(&self, rhs:&[&[FieldElement<N>];3], mode :u8) -> Self {
+        let a0 = get_slice_fp8(&self, 0);
+        let b0 = get_slice_fp8(&self, 1);
+        let c0 = get_slice_fp8(&self, 2);
+        let res1:  Fp8Element<PARAMSIZE, N>;
+        let res2 :  Fp8Element<PARAMSIZE, N>;
+        let res3 :  Fp8Element<PARAMSIZE, N>;
         match  mode { 1 => { //  Sparse multiplication of an Fp24 element with a sparse element on two consecutive Fp8 only
                              //  Used during pairings on BLS48
-                            let a0 = get_slice_fp8(&self, 0);        
+                            /*let a0 = get_slice_fp8(&self, 0);
                             let b0 = get_slice_fp8(&self, 1);
-                            let c0 = get_slice_fp8(&self, 2);
-                            let a1 = Fp8Element{ content: rhs[0].try_into().unwrap(), constants: self.constants };
-                            let b1 = Fp8Element{ content: rhs[1].try_into().unwrap(), constants: self.constants };
+                            let c0 = get_slice_fp8(&self, 2);*/
+                            //let a1 = Fp8Element{ content: rhs[0].try_into().unwrap(), constants: self.constants };
+                            let a1 = Fp8Element::new(&rhs[0].try_into().unwrap(), Some(self.constants));
+                            //let b1 = Fp8Element{ content: rhs[1].try_into().unwrap(), constants: self.constants };
+                            let b1 = Fp8Element::new(&rhs[1].try_into().unwrap(), Some(self.constants));
                             let t0 = a0.multiply(&a1);
                             let t1 = c0.multiply(&b1);
                             let t2 = b0.multiply(&b1);
                             let t3 = a0.addto(&b0).multiply(&a1.addto(&b1));
-                            let res1 = t1.mulby_w().addto(&t0);
-                            let res2 = t3.substract(&t0).substract(&t2);
-                            let res3 = t2.addto(&c0.multiply(&a1)); 
+                            //let res1 = t1.mulby_w().addto(&t0);
+                            res1 = t1.mulby_w().addto(&t0);
+                            //let res2 = t3.substract(&t0).substract(&t2);
+                            res2 = t3.substract(&t0).substract(&t2);
+                            //let res3 = t2.addto(&c0.multiply(&a1));
+                            res3 = t2.addto(&c0.multiply(&a1));
                             /*let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
                                                                                    fieldparams:self.content[0].fieldparams};24];*/
-                            let mut result =[FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
+                            /*let mut result =[FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
                             result[..8].copy_from_slice(&res1.content);
                             result[8..16].copy_from_slice(&res2.content);
                             result[16..].copy_from_slice(&res3.content);
-                            Self {  content : result, constants :self.constants}  
+                            Self {  content : result, constants :self.constants} */
                             }      
                       2 => { //  Sparse multiplication of an Fp24 element with a sparse element on two consecutive Fp8 only
                              //  Used during pairings on BLS48, rhs on 4 Fp elements
-                            let a0 = get_slice_fp8(&self, 0);        
+                            /*let a0 = get_slice_fp8(&self, 0);
                             let b0 = get_slice_fp8(&self, 1);
-                            let c0 = get_slice_fp8(&self, 2);
-                            let y =Fp8Element {content : rhs[2].try_into().unwrap(),constants :self.constants};
-                            let res1 = c0.multiply(&y).mulby_w();
-                            let res2 = a0.multiply(&y);
-                            let res3 = b0.multiply(&y);
+                            let c0 = get_slice_fp8(&self, 2);*/
+                            //let y =Fp8Element {content : rhs[2].try_into().unwrap(),constants :self.constants};
+                            let y = Fp8Element::new(&rhs[2].try_into().unwrap(), Some(self.constants));
+                            //let res1 = c0.multiply(&y).mulby_w();
+                            res1 = c0.multiply(&y).mulby_w();
+                            //let res2 = a0.multiply(&y);
+                            res2 = a0.multiply(&y);
+                            //let res3 = b0.multiply(&y);
+                            res3 = b0.multiply(&y);
                             /*let mut result =[FieldElement{  mont_limbs:self.content[0].fieldparams.zero,
                                                                                    fieldparams:self.content[0].fieldparams};24];*/
-                            let mut result =[FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
+                            /*let mut result =[FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
                             result[..8].copy_from_slice(&res1.content);
                             result[8..16].copy_from_slice(&res2.content);
                             result[16..].copy_from_slice(&res3.content);
-                            Self {  content : result, constants :self.constants}  
+                            Self {  content : result, constants :self.constants}  */
                             }
                       _ =>{ panic!("Invalid sparse multiplication mode for FP24 .")}
-                    }                                                                                                              
+                    }
+
+        let mut result =[FieldElement::new(self.content[0].fieldparams, &self.content[0].fieldparams.zero); 24];
+        result[..8].copy_from_slice(&res1.content);
+        result[8..16].copy_from_slice(&res2.content);
+        result[16..].copy_from_slice(&res3.content);
+        Self::new(&result, Some(self.constants))
     }
 }
 
